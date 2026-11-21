@@ -1,38 +1,78 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AudioLines, ChevronLeft, ChevronRight, CircleHelp, Download, Mic, Volume2 } from 'lucide-react'
+import { AudioLines, ChevronLeft, ChevronRight, CircleHelp, Download, Link2, Mic, Mic2, Timer, Volume2 } from 'lucide-react'
 import { KEY_LABELS, NOTES, notationFile, type KeyId, type SaxNote } from '../data/notes'
 import FingeringDiagram from '../components/FingeringDiagram'
 import LegendModal from '../components/LegendModal'
-import Tuner from '../components/Tuner'
+import MetronomeModal from '../components/MetronomeModal'
+import Recorder from '../components/Recorder'
+import Scales from '../components/Scales'
+import Tuner, { type TunerTab } from '../components/Tuner'
 import { STRINGS, altName, hintText, keyLabel, type Lang } from '../lib/i18n'
+import { onMetronomeChange, metronomeRunning } from '../lib/metronome'
+import { usePersisted } from '../lib/persist'
+import { loadRecordings } from '../lib/recordings'
 import { concertMidi, midiName, playNote, stopAll, writtenMidi, type Instrument } from '../lib/sound'
 
 const DEFAULT_INDEX = NOTES.findIndex((n) => n.id === 'a_4')
 const INSTRUMENTS: Instrument[] = ['soprano', 'alto', 'tenor', 'baritone']
 
-/** состояние, которое переживает перезагрузку (localStorage) */
-function usePersisted<T>(key: string, init: T) {
-  const [v, setV] = useState<T>(() => {
-    try {
-      const raw = localStorage.getItem('sax.' + key)
-      return raw === null ? init : (JSON.parse(raw) as T)
-    } catch {
-      return init
-    }
-  })
-  useEffect(() => {
-    try {
-      localStorage.setItem('sax.' + key, JSON.stringify(v))
-    } catch {
-      /* приватный режим Safari — просто не запоминаем */
-    }
-  }, [key, v])
-  return [v, setV] as const
-}
+// Ссылка на ноту: ?note=c_4&inst=tenor — учитель шлёт ученику, открывается нужная нота.
+// Читаем один раз при загрузке; дальше адрес сам обновляется при выборе ноты.
+const URL_PARAMS = new URLSearchParams(location.search)
+const URL_NOTE = NOTES.findIndex((n) => n.id === URL_PARAMS.get('note'))
+const URL_INST = INSTRUMENTS.find((i) => i === URL_PARAMS.get('inst'))
 
 const sameSet = (a: Set<KeyId>, b: KeyId[]) => a.size === new Set(b).size && b.every((k) => a.has(k))
+const keyStr = (k: KeyId[]) => [...k].sort().join()
 
+type QuizKind = 'fingering' | 'name' | 'ear'
 type QuizResult = null | { ok: true } | { ok: false; missing: Set<KeyId>; extra: Set<KeyId> } | { revealed: true }
+
+// «Какая нота»: ноты с одинаковой основной аппликатурой (C8/D♭8/D8 — разница губами)
+// по схеме не отличить — такие в вопрос не берём.
+const KEY_TWINS = (() => {
+  const seen = new Map<string, number>()
+  NOTES.forEach((n) => seen.set(keyStr(n.keys), (seen.get(keyStr(n.keys)) ?? 0) + 1))
+  return new Set(NOTES.flatMap((n, i) => ((seen.get(keyStr(n.keys)) ?? 0) > 1 ? [i] : [])))
+})()
+
+/** случайная нота с весом: на чём ошибались — попадается чаще */
+function weightedPick(pool: number[], miss: Record<string, number>): number {
+  const w = pool.map((i) => 1 + 2 * (miss[NOTES[i].id] ?? 0))
+  let r = Math.random() * w.reduce((a, b) => a + b, 0)
+  for (let k = 0; k < pool.length; k++) if ((r -= w[k]) < 0) return pool[k]
+  return pool[pool.length - 1]
+}
+
+const shuffle = <T,>(a: T[]) => {
+  const b = [...a]
+  for (let i = b.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[b[i], b[j]] = [b[j], b[i]]
+  }
+  return b
+}
+
+/** 3 неверных варианта: соседние ноты (так труднее), не совпадающие по аппликатуре */
+function distractors(idx: number, pool: number[], kind: QuizKind): number[] {
+  const m = writtenMidi(NOTES[idx].id)
+  const shown = keyStr(NOTES[idx].keys)
+  const ok = (i: number) => {
+    if (i === idx) return false
+    const n = NOTES[i]
+    // у варианта не должно быть аппликатуры, совпадающей с показанной
+    if (kind === 'name' && [n.keys, ...(n.alts ?? []).map((a) => a.keys)].some((k) => keyStr(k) === shown)) return false
+    return true
+  }
+  const near = pool.filter((i) => ok(i) && Math.abs(writtenMidi(NOTES[i].id) - m) <= 7)
+  const rest = pool.filter((i) => ok(i) && !near.includes(i))
+  return [...shuffle(near), ...shuffle(rest)].slice(0, 3)
+}
+
+const poolOf = (withAltissimo: boolean) =>
+  NOTES.flatMap((n, i) => (withAltissimo || n.register !== 'altissimo' ? [i] : []))
+
+const today = () => new Date().toLocaleDateString('sv') // YYYY-MM-DD по местному времени
 
 interface InstallEvent extends Event {
   prompt: () => Promise<void>
@@ -52,22 +92,41 @@ export default function Home() {
   const [instrument, setInstrument] = usePersisted<Instrument>('instrument', 'alto')
   const [lang, setLang] = usePersisted<Lang>('lang', 'ru')
   const [longTone, setLongTone] = usePersisted('longTone', false)
-  const [mode, setMode] = usePersisted<'table' | 'quiz'>('mode', 'table')
+  const [mode, setMode] = usePersisted<'table' | 'quiz' | 'scales'>('mode', 'table')
   const [withAltissimo, setWithAltissimo] = usePersisted('quizAltissimo', false)
   const [best, setBest] = usePersisted('quizBest', 0)
+  const [quizKind, setQuizKind] = usePersisted<QuizKind>('quizKind', 'fingering')
+  const [miss, setMiss] = usePersisted<Record<string, number>>('quizMiss', {})
+  const [practice, setPractice] = usePersisted('practiceDays', { last: '', days: 0 })
+  const [bpm, setBpm] = usePersisted('bpm', 80)
+  const [beats, setBeats] = usePersisted('beats', 4)
 
   const [variant, setVariant] = useState(0)
   const [legendOpen, setLegendOpen] = useState(false)
-  const [tunerOpen, setTunerOpen] = useState(false)
+  const [tunerTab, setTunerTab] = useState<TunerTab | null>(null)
+  const tunerOpen = tunerTab !== null
+  const [metroOpen, setMetroOpen] = useState(false)
+  const [metroOn, setMetroOn] = useState(metronomeRunning)
+  const [recOpen, setRecOpen] = useState(false)
+  const [own, setOwn] = useState<Set<string>>(new Set())
+  const [toast, setToast] = useState<string | null>(null)
   const [installEvt, setInstallEvt] = useState<InstallEvent | null>(null)
   const railRef = useRef<HTMLDivElement>(null)
 
   // тренажёр
   // первый вопрос — случайная нота без альтиссимо (после перезагрузки в режиме тренажёра)
   const [quizIdx, setQuizIdx] = useState(() => {
-    const easy = NOTES.flatMap((n, i) => (n.register === 'altissimo' ? [] : [i]))
+    const easy = NOTES.flatMap((n, i) => (n.register === 'altissimo' || KEY_TWINS.has(i) ? [] : [i]))
     return easy[Math.floor(Math.random() * easy.length)]
   })
+  // варианты ответа для «Какая нота» и «На слух»; выбранный вариант
+  // после перезагрузки в «Какая нота»/«На слух» варианты нужны сразу, иначе вопрос без кнопок
+  const [options, setOptions] = useState<number[]>(() =>
+    quizKind === 'fingering' ? [] : shuffle([quizIdx, ...distractors(quizIdx, poolOf(withAltissimo), quizKind)]),
+  )
+  const [choice, setChoice] = useState<number | null>(null)
+  // ошибку по вопросу считаем один раз: после «не совсем» ученик правит схему и пробует снова
+  const penalized = useRef(false)
   const [guess, setGuess] = useState<Set<KeyId>>(new Set())
   const [result, setResult] = useState<QuizResult>(null)
   const [score, setScore] = useState({ right: 0, total: 0, streak: 0 })
@@ -86,6 +145,49 @@ export default function Home() {
     document.title = t.title
   }, [lang, t.title])
 
+  // своя запись нот (IndexedDB) — подключаем к проигрыванию при запуске
+  useEffect(() => {
+    void loadRecordings().then(setOwn)
+  }, [])
+  useEffect(() => onMetronomeChange(setMetroOn), [])
+
+  // ссылка на ноту из адреса — важнее запомненной ноты
+  useEffect(() => {
+    if (URL_NOTE >= 0) {
+      setIndex(URL_NOTE)
+      setMode('table')
+    }
+    // в ссылке нет inst = альт (так её пишем), а не «строй получателя»
+    if (URL_NOTE >= 0) setInstrument(URL_INST ?? 'alto')
+    else if (URL_INST) setInstrument(URL_INST)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  // адрес повторяет выбранную ноту — его можно скопировать и отправить
+  useEffect(() => {
+    const q = mode === 'table' ? `?note=${NOTES[safeIndex].id}${instrument !== 'alto' ? `&inst=${instrument}` : ''}` : ''
+    history.replaceState(null, '', location.pathname + q)
+  }, [mode, safeIndex, instrument])
+
+  useEffect(() => {
+    if (!toast) return
+    const id = setTimeout(() => setToast(null), 2000)
+    return () => clearTimeout(id)
+  }, [toast])
+
+  const share = async () => {
+    const url = location.href
+    if (navigator.share) {
+      await navigator.share({ title: `${t.title}: ${displayName}`, url }).catch(() => {})
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      setToast(t.linkCopied)
+    } catch {
+      setToast(url)
+    }
+  }
+
   useEffect(() => {
     const onPrompt = (e: Event) => {
       e.preventDefault() // покажем свою кнопку «Установить» вместо баннера браузера
@@ -96,7 +198,7 @@ export default function Home() {
   }, [])
 
   const play = useCallback(
-    (n: SaxNote = note) => playNote(n.id, n.sound, instrument, longTone),
+    (n: SaxNote = note) => playNote(n.id, n.sound, instrument, { long: longTone }),
     [note, instrument, longTone],
   )
 
@@ -107,28 +209,66 @@ export default function Home() {
       setVariant(0)
       if (autoplay) {
         const n = NOTES[clamped]
-        playNote(n.id, n.sound, instrument, longTone)
+        playNote(n.id, n.sound, instrument, { long: longTone })
       }
     },
     [setIndex, instrument, longTone],
   )
 
   // ── тренажёр ──
-  const pool = useMemo(
-    () => NOTES.map((n, i) => ({ n, i })).filter(({ n }) => withAltissimo || n.register !== 'altissimo').map(({ i }) => i),
-    [withAltissimo],
-  )
-  const nextQuestion = useCallback(() => {
-    stopAll()
-    setQuizIdx((cur) => {
+  const pool = useMemo(() => poolOf(withAltissimo), [withAltissimo])
+  const nextQuestion = useCallback(
+    (kind: QuizKind = quizKind) => {
+      stopAll()
       // не повторяем ту же ноту два раза подряд
-      const options = pool.filter((i) => i !== cur)
-      return options[Math.floor(Math.random() * options.length)]
-    })
-    setGuess(new Set())
-    setResult(null)
-    setVariant(0)
-  }, [pool])
+      const from = pool.filter((i) => i !== quizIdx && !(kind === 'name' && KEY_TWINS.has(i)))
+      const idx = weightedPick(from, miss)
+      setQuizIdx(idx)
+      setOptions(kind === 'fingering' ? [] : shuffle([idx, ...distractors(idx, pool, kind)]))
+      setChoice(null)
+      penalized.current = false
+      setGuess(new Set())
+      setResult(null)
+      setVariant(0)
+      // «На слух»: нота звучит сразу (вызов идёт из нажатия — браузер разрешит звук)
+      if (kind === 'ear') playNote(NOTES[idx].id, NOTES[idx].sound, instrument, { long: longTone })
+    },
+    [pool, quizIdx, quizKind, miss, instrument, longTone],
+  )
+
+  /** учёт ответа: счёт, серия, вес ноты для повторов, дни занятий подряд */
+  const record = useCallback(
+    (ok: boolean) => {
+      const id = NOTES[quizIdx].id
+      setMiss((m) => {
+        const v = ok ? Math.max(0, (m[id] ?? 0) - 1) : Math.min(5, (m[id] ?? 0) + 2)
+        const next = { ...m }
+        if (v) next[id] = v
+        else delete next[id]
+        return next
+      })
+      setScore((s) => {
+        const streak = ok ? s.streak + 1 : 0
+        if (streak > best) setBest(streak)
+        return { right: s.right + (ok ? 1 : 0), total: s.total + 1, streak }
+      })
+      const d = today()
+      setPractice((p) => {
+        if (p.last === d) return p
+        const y = new Date()
+        y.setDate(y.getDate() - 1)
+        return { last: d, days: p.last === y.toLocaleDateString('sv') ? p.days + 1 : 1 }
+      })
+    },
+    [quizIdx, best, setBest, setMiss, setPractice],
+  )
+
+  const choose = (i: number) => {
+    if (choice !== null) return
+    setChoice(i)
+    record(i === quizIdx)
+    play(NOTES[quizIdx])
+  }
 
   const toggleKey = useCallback(
     (k: KeyId) => {
@@ -150,11 +290,7 @@ export default function Home() {
     if (hit >= 0) {
       setVariant(hit)
       setResult({ ok: true })
-      setScore((s) => {
-        const streak = s.streak + 1
-        if (streak > best) setBest(streak)
-        return { right: s.right + 1, total: s.total + 1, streak }
-      })
+      if (!penalized.current) record(true)
       play()
       return
     }
@@ -169,22 +305,36 @@ export default function Home() {
       missing: new Set(closest.filter((k) => !guess.has(k))),
       extra: new Set([...guess].filter((k) => !closest.includes(k))),
     })
-    setScore((s) => ({ right: s.right, total: s.total + 1, streak: 0 }))
-  }, [note, guess, best, setBest, play])
+    if (!penalized.current) record(false)
+    penalized.current = true
+  }, [note, guess, record, play])
 
   const reveal = useCallback(() => {
-    if (!result || !('ok' in result)) setScore((s) => ({ right: s.right, total: s.total + 1, streak: 0 }))
+    if (!penalized.current) record(false)
+    penalized.current = true
     setVariant(0)
     setResult({ revealed: true })
     play()
-  }, [result, play])
+  }, [record, play])
 
-  const answered = !!result && (('ok' in result && result.ok) || 'revealed' in result)
+  const choiceKind = mode === 'quiz' && quizKind !== 'fingering'
+  const answered = choiceKind ? choice !== null : !!result && (('ok' in result && result.ok) || 'revealed' in result)
+  // в «Какая нота» и «На слух» имя, нотный стан и звучание до ответа выдали бы ответ
+  const hideAnswer = choiceKind && !answered
+  // серия прервалась (не занимались вчера и сегодня) — не показываем старое число
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+  const shownDays = practice.last === today() || practice.last === yesterday.toLocaleDateString('sv') ? practice.days : 0
+  const weakNotes = Object.entries(miss)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([id]) => NOTES.find((n) => n.id === id))
+    .filter((n): n is SaxNote => !!n)
 
   // клавиатура: стрелки — навигация, пробел — звук, Enter — проверить/дальше
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (legendOpen || tunerOpen) return
+      if (legendOpen || tunerOpen || metroOpen || recOpen || mode === 'scales') return
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'SELECT' || tag === 'INPUT') return
       if (mode === 'table' && (e.key === 'ArrowRight' || e.key === 'ArrowUp')) {
@@ -193,18 +343,24 @@ export default function Home() {
       } else if (mode === 'table' && (e.key === 'ArrowLeft' || e.key === 'ArrowDown')) {
         e.preventDefault()
         select(safeIndex - 1)
-      } else if (e.key === ' ' && (e.target as HTMLElement).getAttribute('role') !== 'button') {
+      } else if (e.key === ' ') {
+        // пробел на кнопке/вкладке — нажать её, а не играть ноту
+        if ((e.target as HTMLElement).closest('button,a,[role=button],[role=tab],textarea')) return
         e.preventDefault()
-        play()
+        // в «Какая нота» звук выдал бы ответ
+        if (!(quizKind === 'name' && hideAnswer)) play()
       } else if (mode === 'quiz' && e.key === 'Enter' && tag !== 'BUTTON') {
         e.preventDefault()
         if (answered) nextQuestion()
-        else check()
+        else if (!choiceKind) check()
+      } else if (choiceKind && !answered && /^[1-4]$/.test(e.key) && options[Number(e.key) - 1] !== undefined) {
+        choose(options[Number(e.key) - 1]) // 1–4 — выбрать вариант с клавиатуры
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [safeIndex, select, play, legendOpen, tunerOpen, mode, answered, nextQuestion, check])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [safeIndex, select, play, legendOpen, tunerOpen, metroOpen, recOpen, mode, answered, nextQuestion, check, choiceKind, options, quizKind, hideAnswer])
 
   // прокрутка активной ноты в видимую область ленты. При первом показе — мгновенно:
   // плавная прокрутка во время загрузки страницы на телефоне обрывается на полпути.
@@ -235,7 +391,10 @@ export default function Home() {
   let diagramPressed = pressed
   let missing: Set<KeyId> | undefined
   let extra: Set<KeyId> | undefined
-  if (mode === 'quiz') {
+  if (choiceKind) {
+    // «Какая нота» показывает аппликатуру; «На слух» — только после ответа
+    diagramPressed = quizKind === 'ear' && !answered ? new Set() : new Set(note.keys)
+  } else if (mode === 'quiz') {
     if (result && 'revealed' in result) diagramPressed = pressed
     else if (result && 'ok' in result && result.ok) diagramPressed = guess
     else {
@@ -254,7 +413,7 @@ export default function Home() {
       <header className="border-b border-[#2e2415] px-4 py-3 sm:px-6">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <img src="img/icon3.png" alt="" className="h-11 w-11 shrink-0 rounded-lg border border-[#3a2f1c]" />
+            <img src="img/icon.svg" alt="" className="h-11 w-11 shrink-0 rounded-lg border border-[#3a2f1c]" />
             <div className="min-w-0">
               <h1 className="font-display text-lg leading-tight text-[#f5e8cd] sm:text-xl">{t.title}</h1>
               <p className="truncate text-xs text-[#a08c64]">{t.subtitle}</p>
@@ -286,7 +445,7 @@ export default function Home() {
         {/* панель режимов и настроек */}
         <div className="mx-auto mt-3 flex max-w-5xl flex-wrap items-center gap-2">
           <div className="flex rounded-xl border border-[#4a3b22] p-0.5" role="tablist">
-            {(['table', 'quiz'] as const).map((m) => (
+            {(['table', 'quiz', 'scales'] as const).map((m) => (
               <button
                 key={m}
                 role="tab"
@@ -301,7 +460,7 @@ export default function Home() {
                   mode === m ? BTN_ON : 'text-[#c9b892] hover:text-[#f2c14e]'
                 }`}
               >
-                {m === 'table' ? t.modeTable : t.modeQuiz}
+                {m === 'table' ? t.modeTable : m === 'quiz' ? t.modeQuiz : t.modeScales}
               </button>
             ))}
           </div>
@@ -337,14 +496,30 @@ export default function Home() {
             <AudioLines size={18} />
             <span className="hidden sm:inline">{t.longTone}</span>
           </button>
-          <button onClick={() => setTunerOpen(true)} className={BTN} title={t.tuner}>
+          <button onClick={() => setTunerTab('tuner')} className={BTN} title={t.tuner} aria-label={t.tuner}>
             <Mic size={18} />
             <span className="hidden sm:inline">{t.tuner}</span>
+          </button>
+          <button
+            onClick={() => setMetroOpen(true)}
+            className={metroOn ? BTN_PRIMARY : BTN}
+            title={t.metronome}
+            aria-label={t.metronome}
+          >
+            <Timer size={18} />
+            <span className="hidden sm:inline">{t.metronome}</span>
+          </button>
+          <button onClick={() => setRecOpen(true)} className={BTN} title={t.recTitle} aria-label={t.recTitle}>
+            <Mic2 size={18} />
+            <span className="hidden sm:inline">{t.record}</span>
           </button>
         </div>
       </header>
 
       {/* основная часть */}
+      {mode === 'scales' ? (
+        <Scales instrument={instrument} lang={lang} bpm={bpm} setBpm={setBpm} t={t} />
+      ) : (
       <main className="mx-auto grid w-full max-w-5xl flex-1 grid-cols-1 items-start gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[1fr_340px]">
         {/* схема клапанов */}
         <section className="order-2 flex flex-col items-center gap-3 rounded-2xl border border-[#2e2415] bg-[#1a1509] p-4 lg:order-1">
@@ -364,10 +539,10 @@ export default function Home() {
               ))}
             </div>
           )}
-          {mode === 'quiz' && !answered && <p className="text-sm text-[#a08c64]">{t.quizTap}</p>}
+          {mode === 'quiz' && !choiceKind && !answered && <p className="text-sm text-[#a08c64]">{t.quizTap}</p>}
           <FingeringDiagram
             pressed={diagramPressed}
-            onToggle={mode === 'quiz' && !answered ? toggleKey : undefined}
+            onToggle={mode === 'quiz' && !choiceKind && !answered ? toggleKey : undefined}
             missing={missing}
             extra={extra}
             bisLabel={t.bis}
@@ -392,7 +567,7 @@ export default function Home() {
                   </>
                 )}
               </span>
-            ) : mode === 'quiz' && !answered ? null : shownKeys.length > 0 ? (
+            ) : (mode === 'quiz' && !answered && !(choiceKind && quizKind === 'name')) ? null : shownKeys.length > 0 ? (
               <>
                 {t.pressed}: <span className="font-semibold text-[#e8d5ae]">{shownKeys.map(kl).join(' · ')}</span>
               </>
@@ -405,16 +580,57 @@ export default function Home() {
         {/* карточка ноты */}
         <section className="order-1 lg:order-2">
           <div className="rounded-2xl border border-[#2e2415] bg-[#1a1509] p-4">
-            {mode === 'quiz' && <div className="mb-2 text-sm text-[#a08c64]">{t.quizPrompt}</div>}
+            {mode === 'quiz' && (
+              <>
+                <div className="mb-3 flex rounded-xl border border-[#4a3b22] p-0.5" role="tablist" aria-label={t.modeQuiz}>
+                  {(['fingering', 'name', 'ear'] as const).map((k) => (
+                    <button
+                      key={k}
+                      role="tab"
+                      aria-selected={quizKind === k}
+                      onClick={() => {
+                        if (k === quizKind) return
+                        setQuizKind(k)
+                        nextQuestion(k)
+                      }}
+                      className={`h-9 flex-1 cursor-pointer rounded-[10px] px-2 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[#f2c14e] sm:text-sm ${
+                        quizKind === k ? BTN_ON : 'text-[#c9b892] hover:text-[#f2c14e]'
+                      }`}
+                    >
+                      {k === 'fingering' ? t.kindFingering : k === 'name' ? t.kindName : t.kindEar}
+                    </button>
+                  ))}
+                </div>
+                <div className="mb-2 text-sm text-[#a08c64]">
+                  {quizKind === 'fingering' ? t.quizPrompt : quizKind === 'name' ? t.quizNamePrompt : t.quizEarPrompt}
+                </div>
+              </>
+            )}
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="font-display text-5xl leading-none text-[#f2c14e]">{displayName}</div>
-                <div className="mt-2 inline-block rounded-full border border-[#4a3b22] px-2.5 py-0.5 text-xs text-[#c9b892]">
-                  {t[note.register]}
-                </div>
-                <div className="mt-2 text-xs text-[#a08c64]">
-                  {t.written} {displayName} · {t.sounds} <span className="font-semibold text-[#e8d5ae]">{concert}</span>
-                </div>
+                <div className="font-display text-5xl leading-none text-[#f2c14e]">{hideAnswer ? '?' : displayName}</div>
+                {!hideAnswer && (
+                  <>
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="inline-block rounded-full border border-[#4a3b22] px-2.5 py-0.5 text-xs text-[#c9b892]">
+                        {t[note.register]}
+                      </span>
+                      {mode === 'table' && (
+                        <button
+                          onClick={share}
+                          aria-label={t.share}
+                          title={t.share}
+                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-[#4a3b22] text-[#c9b892] hover:text-[#f2c14e] focus-visible:outline-2 focus-visible:outline-[#f2c14e]"
+                        >
+                          <Link2 size={15} />
+                        </button>
+                      )}
+                    </div>
+                    <div className="mt-2 text-xs text-[#a08c64]">
+                      {t.written} {displayName} · {t.sounds} <span className="font-semibold text-[#e8d5ae]">{concert}</span>
+                    </div>
+                  </>
+                )}
                 {mode === 'table' && note.hint && variant === 0 && (
                   <div className="mt-1 text-xs text-[#a08c64]">{hintText(note, lang)}</div>
                 )}
@@ -424,26 +640,38 @@ export default function Home() {
                   </div>
                 )}
               </div>
-              <div className="flex shrink-0 flex-col items-center gap-1">
+              <div className={`flex shrink-0 flex-col items-center gap-1 ${quizKind === 'name' && hideAnswer ? 'invisible' : ''}`}>
                 <button
                   onClick={() => play()}
-                  aria-label={`${t.listen} ${displayName}`}
+                  aria-label={hideAnswer ? t.playAgain : `${t.listen} ${displayName}`}
                   className="flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-gradient-to-br from-[#f6d98a] to-[#c8922e] text-[#241a08] shadow-[0_0_18px_rgba(217,164,65,0.35)] transition-all hover:scale-105 focus-visible:outline-2 focus-visible:outline-[#f2c14e] active:scale-95"
                 >
                   <Volume2 size={26} />
                 </button>
-                {(!note.sound || longTone) && <span className="text-center text-[10px] leading-tight text-[#7a6845]">{t.synth}</span>}
+                {!hideAnswer && ((!note.sound && !own.has(note.id)) || longTone) && (
+                  <span className="text-center text-[10px] leading-tight text-[#7a6845]">{t.synth}</span>
+                )}
               </div>
             </div>
 
             {/* нотный стан */}
-            <div className="mt-4 flex justify-center rounded-xl bg-white p-3">
-              <img
-                src={notationFile(note.id)}
-                alt={`${t.note} ${displayName} ${t.onStaff}`}
-                className="h-36 w-auto object-contain"
-              />
-            </div>
+            {hideAnswer ? (
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {options.map((i, k) => (
+                  <button key={i} onClick={() => choose(i)} className={`${BTN} h-14 text-lg`}>
+                    <span className="text-xs text-[#7a6845]">{k + 1}</span> {nameOf(NOTES[i])}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 flex justify-center rounded-xl bg-white p-3">
+                <img
+                  src={notationFile(note.id)}
+                  alt={`${t.note} ${displayName} ${t.onStaff}`}
+                  className="h-36 w-auto object-contain"
+                />
+              </div>
+            )}
 
             {mode === 'table' ? (
               <div className="mt-4 flex gap-2">
@@ -468,7 +696,17 @@ export default function Home() {
               </div>
             ) : (
               <div className="mt-4 space-y-3">
-                {result && 'ok' in result && result.ok && (
+                {choiceKind && choice !== null && (
+                  <div
+                    className={`rounded-xl border px-3 py-2 text-center font-semibold ${
+                      choice === quizIdx ? 'border-[#2f6b3b] bg-[#16351c] text-[#5fd27a]' : 'border-[#6b2f2a] bg-[#351816] text-[#ff8a78]'
+                    }`}
+                    role="status"
+                  >
+                    {choice === quizIdx ? `✓ ${t.correct}` : `${t.wrong}: ${nameOf(NOTES[choice])} → ${displayName}`}
+                  </div>
+                )}
+                {!choiceKind && result && 'ok' in result && result.ok && (
                   <div className="rounded-xl border border-[#2f6b3b] bg-[#16351c] px-3 py-2 text-center font-semibold text-[#5fd27a]" role="status">
                     ✓ {t.correct}
                     {variant > 0 && note.alts?.[variant - 1] && (
@@ -478,17 +716,17 @@ export default function Home() {
                     )}
                   </div>
                 )}
-                {result && 'revealed' in result && (
+                {!choiceKind && result && 'revealed' in result && (
                   <div className="rounded-xl border border-[#4a3b22] px-3 py-2 text-center text-sm text-[#c9b892]" role="status">
                     {t.revealed}
                   </div>
                 )}
                 <div className="flex gap-2">
                   {answered ? (
-                    <button onClick={nextQuestion} className={`${BTN_PRIMARY} h-12 flex-1`}>
+                    <button onClick={() => nextQuestion()} className={`${BTN_PRIMARY} h-12 flex-1`}>
                       {t.nextQ} <ChevronRight size={18} />
                     </button>
-                  ) : (
+                  ) : choiceKind ? null : (
                     <>
                       <button onClick={check} className={`${BTN_PRIMARY} h-12 flex-1`}>
                         {t.check}
@@ -499,7 +737,7 @@ export default function Home() {
                     </>
                   )}
                 </div>
-                {!answered && guess.size > 0 && (
+                {!choiceKind && !answered && guess.size > 0 && (
                   <button
                     onClick={() => {
                       setGuess(new Set())
@@ -515,8 +753,10 @@ export default function Home() {
           </div>
         </section>
       </main>
+      )}
 
       {/* нижняя панель: лента нот в таблице, счёт в тренажёре (лента выдала бы ответ) */}
+      {mode !== 'scales' && (
       <footer className="sticky bottom-0 border-t border-[#2e2415] bg-[#14100a]/95 backdrop-blur-sm">
         {mode === 'table' ? (
           <div ref={railRef} className="mx-auto flex max-w-5xl items-center gap-1.5 overflow-x-auto px-4 py-3 sm:px-6">
@@ -554,7 +794,23 @@ export default function Home() {
               <span>
                 {t.best}: <b className="text-[#f2c14e]">{best}</b>
               </span>
+              {shownDays > 0 && (
+                <span title={t.days}>
+                  🔥 <b className="text-[#f2c14e]">{shownDays}</b> {t.days}
+                </span>
+              )}
             </div>
+            {weakNotes.length > 0 && (
+              <div className="flex items-center gap-2 text-[#c9b892]">
+                {t.weak}: <b className="text-[#ff8a78]">{weakNotes.map(nameOf).join(', ')}</b>
+                <button
+                  onClick={() => setMiss({})}
+                  className="cursor-pointer text-xs text-[#7a6845] underline-offset-2 hover:text-[#f2c14e] hover:underline"
+                >
+                  {t.resetStats}
+                </button>
+              </div>
+            )}
             <label className="flex cursor-pointer items-center gap-2 text-[#c9b892]">
               <input
                 type="checkbox"
@@ -567,17 +823,42 @@ export default function Home() {
           </div>
         )}
       </footer>
+      )}
 
       {legendOpen && <LegendModal onClose={() => setLegendOpen(false)} t={t} />}
-      {tunerOpen && (
+      {tunerTab && (
         <Tuner
-          onClose={() => setTunerOpen(false)}
+          onClose={() => setTunerTab(null)}
           instrument={instrument}
           sharp={sharpMode}
-          targetMidi={writtenMidi(note.id)}
-          targetName={displayName}
+          note={mode === 'scales' || hideAnswer ? NOTES[safeIndex] : note}
+          nameOf={nameOf}
+          tab={tunerTab}
+          onTab={setTunerTab}
           t={t}
         />
+      )}
+      {metroOpen && (
+        <MetronomeModal onClose={() => setMetroOpen(false)} bpm={bpm} setBpm={setBpm} beats={beats} setBeats={setBeats} t={t} />
+      )}
+      {recOpen && (
+        <Recorder
+          onClose={() => setRecOpen(false)}
+          instrument={instrument}
+          startIndex={mode === 'quiz' ? safeIndex : NOTES.indexOf(note)}
+          nameOf={nameOf}
+          own={own}
+          onChange={setOwn}
+          t={t}
+        />
+      )}
+      {toast && (
+        <div
+          className="fixed bottom-24 left-1/2 z-50 max-w-[90vw] -translate-x-1/2 truncate rounded-xl border border-[#4a3b22] bg-[#241c11] px-4 py-2 text-sm text-[#e8d5ae] shadow-xl"
+          role="status"
+        >
+          {toast}
+        </div>
       )}
     </div>
   )

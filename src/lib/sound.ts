@@ -44,10 +44,11 @@ export const freqToMidi = (f: number) => 69 + 12 * Math.log2(f / 440)
 // ── проигрывание ─────────────────────────────────────────────────────────
 
 let ctx: AudioContext | null = null
-function audioCtx(): AudioContext {
+export function audioCtx(): AudioContext {
   // Контекст создаём лениво: браузер разрешает звук только после жеста пользователя.
   ctx ??= new AudioContext()
-  if (ctx.state === 'suspended') void ctx.resume()
+  // iOS после звонка/Siri держит контекст в нестандартном 'interrupted' — будим любой не-running
+  if (ctx.state !== 'running') void ctx.resume()
   return ctx
 }
 
@@ -92,9 +93,10 @@ function synth(freq: number, seconds: number) {
 
   const peak = 0.22
   const end = t0 + seconds
+  const release = Math.min(0.3, seconds / 3)
   out.gain.setValueAtTime(0, t0)
   out.gain.linearRampToValueAtTime(peak, t0 + 0.05)
-  out.gain.setValueAtTime(peak, end - 0.3)
+  out.gain.setValueAtTime(peak, end - release)
   out.gain.linearRampToValueAtTime(0, end)
 
   const nodes = [...oscs, lfo]
@@ -112,23 +114,65 @@ function synth(freq: number, seconds: number) {
   }
 }
 
+// ── свои записи (режим «Запись») ─────────────────────────────────────────
+// Записи пользователя важнее встроенных: он записал их на своём инструменте.
+// Храним object URL и строй, на котором записано, — от него считаем сдвиг.
+const own = new Map<string, { url: string; instrument: Instrument }>()
+
+export function setOwnRecording(id: string, blob: Blob | null, instrument: Instrument = 'alto') {
+  const old = own.get(id)
+  if (old) URL.revokeObjectURL(old.url)
+  if (blob) own.set(id, { url: URL.createObjectURL(blob), instrument })
+  else own.delete(id)
+}
+
+export const hasOwnRecording = (id: string) => own.has(id)
+
+export interface PlayOpts {
+  /** длинный тон: всегда синтез на 4 с (запись короткая) */
+  long?: boolean
+  /** длительность синтеза, с (для гамм — под темп) */
+  seconds?: number
+  /** вызовется, когда звук закончился или был заглушён */
+  onEnd?: () => void
+}
+
 /**
- * Сыграть ноту. Есть запись и не просили длинный тон → mp3 (настоящий тембр);
- * иначе синтез нужной высоты. Возвращает true, если был синтез.
+ * Сыграть ноту. Своя запись → встроенная запись → синтез нужной высоты.
+ * Длинный тон всегда синтезом. Возвращает true, если был синтез.
  */
-export function playNote(id: string, hasRecording: boolean, inst: Instrument, long: boolean): boolean {
+export function playNote(id: string, hasRecording: boolean, inst: Instrument, opts: PlayOpts = {}): boolean {
   stopAll()
-  if (hasRecording && !long) {
-    const a = new Audio(audioFile(id))
+  let ended = false
+  const end = () => {
+    if (ended) return
+    ended = true
+    opts.onEnd?.()
+  }
+  const mine = own.get(id)
+  if ((mine || hasRecording) && !opts.long) {
+    const a = new Audio(mine ? mine.url : audioFile(id))
     // ponytail: сдвиг скорости меняет и тембр/длину; для тенора/баритона честнее
-    // отдельные записи, если появятся
+    // отдельные записи (режим «Запись»)
     a.preservesPitch = false
-    a.playbackRate = 2 ** ((TRANSPOSE[inst] - TRANSPOSE[RECORDED_ON]) / 12)
-    void a.play().catch(() => {})
-    stopCurrent = () => a.pause()
+    a.playbackRate = 2 ** ((TRANSPOSE[inst] - TRANSPOSE[mine ? mine.instrument : RECORDED_ON]) / 12)
+    a.onended = end
+    a.onerror = end
+    void a.play().catch(end)
+    stopCurrent = () => {
+      a.pause()
+      end()
+    }
     return false
   }
-  stopCurrent = synth(midiToFreq(concertMidi(id, inst)), long ? 4 : 1.2)
+  const seconds = opts.long ? 4 : (opts.seconds ?? 1.2)
+  const stop = synth(midiToFreq(concertMidi(id, inst)), seconds)
+  const timer = setTimeout(end, seconds * 1000)
+  stopCurrent = () => {
+    clearTimeout(timer)
+    stop()
+    end()
+  }
   return true
 }
 

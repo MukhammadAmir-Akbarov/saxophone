@@ -2,7 +2,7 @@
 // Звуки, нотный стан и картинки кладём в кэш сразу при установке (это ~2 МБ),
 // JS/CSS сборки (имена с хешем) — по мере загрузки, плюс страница пришлёт их список.
 // При изменении набора файлов — поднять версию CACHE, старый кэш удалится.
-const CACHE = 'sax-v2'
+const CACHE = 'sax-211e65634b'
 const PRECACHE = [
   './',
   'manifest.webmanifest',
@@ -46,12 +46,6 @@ const PRECACHE = [
   'audio/gb4.mp3',
   'audio/gb5.mp3',
   'audio/gb6.mp3',
-  'img/apple-touch-icon.png',
-  'img/icon-192.png',
-  'img/icon-512.png',
-  'img/icon3.png',
-  'img/legend.jpg',
-  'img/legend2.jpg',
   'notes/a_3.png',
   'notes/a_4.png',
   'notes/a_5.png',
@@ -106,6 +100,12 @@ const PRECACHE = [
   'notes/gb5.png',
   'notes/gb6.png',
   'notes/gb7.png',
+  'img/apple-touch-icon.png',
+  'img/icon-192.png',
+  'img/icon-512.png',
+  'img/icon.svg',
+  'img/legend.jpg',
+  'img/legend2.jpg',
 ]
 
 self.addEventListener('install', (e) => {
@@ -116,7 +116,8 @@ self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(// на github.io у всех проектов один origin — чужие кэши не трогаем
+        keys.filter((k) => k.startsWith('sax-') && k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   )
 })
@@ -133,11 +134,18 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return
   const url = new URL(req.url)
   if (req.mode === 'navigate') {
-    // страницу — сначала из сети (чтобы видеть обновления), без сети — из кэша
+    // страницу — сначала из сети (чтобы видеть обновления), без сети — из кэша.
+    // В кэш кладём только саму страницу приложения: 404 или открытый во вкладке mp3
+    // иначе подменили бы её, и без сети открывалось бы не то.
+    const shell = new URL('./', self.registration.scope).pathname
     e.respondWith(
       fetch(req)
         .then((res) => {
-          caches.open(CACHE).then((c) => c.put('./', res.clone()))
+          const html = (res.headers.get('content-type') || '').includes('text/html')
+          if (res.ok && html && url.pathname === shell) {
+            const copy = res.clone()
+            caches.open(CACHE).then((c) => c.put('./', copy))
+          }
           return res
         })
         .catch(() => caches.match('./')),
@@ -147,19 +155,44 @@ self.addEventListener('fetch', (e) => {
   const sameOrigin = url.origin === self.location.origin
   const fonts = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com'
   if (!sameOrigin && !fonts) return
-  // Range-запросы (аудио) отдаём из кэша целиком: браузер это принимает.
   e.respondWith(
-    caches.match(req.url).then(
-      (hit) =>
-        hit ||
-        fetch(req).then((res) => {
-          // 206 (кусок аудио) кэш не принимает — кладём только целые ответы
-          if (res.status === 200 || res.type === 'opaque') {
-            const copy = res.clone()
-            caches.open(CACHE).then((c) => c.put(req.url, copy)).catch(() => {})
-          }
-          return res
-        }),
-    ),
+    caches.match(req.url).then((hit) => {
+      if (hit) {
+        const range = req.headers.get('range')
+        return range ? rangeResponse(hit, range) : hit
+      }
+      return fetch(req).then((res) => {
+        // 206 (кусок аудио) кэш не принимает — кладём только целые ответы
+        if (res.status === 200 || res.type === 'opaque') {
+          const copy = res.clone()
+          caches.open(CACHE).then((c) => c.put(req.url, copy)).catch(() => {})
+        }
+        return res
+      })
+    }),
   )
 })
+
+// Safari просит аудио кусками (Range) и не играет, если на такой запрос пришёл
+// целый файл с кодом 200. Режем кэшированный файл и отвечаем 206, как сервер.
+async function rangeResponse(res, range) {
+  const buf = await res.arrayBuffer()
+  const m = /bytes=(\d*)-(\d*)/.exec(range)
+  let start = m && m[1] ? Number(m[1]) : 0
+  let end = m && m[2] ? Number(m[2]) : buf.byteLength - 1
+  if (m && !m[1] && m[2]) {
+    start = Math.max(0, buf.byteLength - Number(m[2])) // bytes=-500 — последние 500
+    end = buf.byteLength - 1
+  }
+  end = Math.min(end, buf.byteLength - 1)
+  if (start > end) return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${buf.byteLength}` } })
+  return new Response(buf.slice(start, end + 1), {
+    status: 206,
+    headers: {
+      'Content-Type': res.headers.get('content-type') || 'audio/mpeg',
+      'Content-Range': `bytes ${start}-${end}/${buf.byteLength}`,
+      'Content-Length': String(end - start + 1),
+      'Accept-Ranges': 'bytes',
+    },
+  })
+}
