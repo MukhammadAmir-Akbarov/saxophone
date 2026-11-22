@@ -122,6 +122,44 @@ export function octaveShift(part: EnsNote[], inst: Instrument): number {
   return 0
 }
 
+/** концертная высота партии в момент t (доли), с учётом сдвига; пауза — null */
+function soundingAt(part: EnsNote[], t: number, shift = 0): number | null {
+  let acc = 0
+  for (const n of part) {
+    if (t < acc + n.beats) return n.concert === null ? null : n.concert + shift
+    acc += n.beats
+  }
+  return null
+}
+
+// голос, который должен звучать ВЫШЕ данной партии
+const ABOVE: Partial<Record<PartId, PartId>> = { second: 'melody', bass: 'second' }
+
+/**
+ * Подходит ли партия этому саксофону. Партии строятся в реальной высоте; если
+ * партия не влезает в диапазон и уезжает на октаву вверх, она начинает звучать
+ * ВЫШЕ голоса, который должен быть над ней (бас на альте — над мелодией). В живом
+ * ансамбле так тоже не играют: такую партию не предлагаем, а объясняем почему.
+ * Допускаем короткие перекрещивания (до 15% времени) — в двухголосии это норма.
+ */
+export function fitsInstrument(parts: Parts, id: PartId, inst: Instrument): boolean {
+  const above = ABOVE[id]
+  if (!above) return true
+  const shift = octaveShift(parts[id], inst)
+  if (shift <= 0) return true
+  const total = parts[id].reduce((a, n) => a + n.beats, 0)
+  let both = 0
+  let crossed = 0
+  for (let t = 0; t < total; t += 0.25) {
+    const me = soundingAt(parts[id], t, shift)
+    const up = soundingAt(parts[above], t)
+    if (me === null || up === null) continue
+    both++
+    if (me > up) crossed++
+  }
+  return both === 0 || crossed / both <= 0.15
+}
+
 /** партия для строя: письменные ноты (индексы NOTES), октавный сдвиг уже применён */
 export function partForInstrument(part: EnsNote[], inst: Instrument): WrittenNote[] {
   const s = octaveShift(part, inst)

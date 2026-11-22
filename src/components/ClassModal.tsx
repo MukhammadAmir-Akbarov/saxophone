@@ -17,6 +17,8 @@ interface Props {
   nameOf: (n: SaxNote) => string
   /** ученик, только что добавленный по ссылке — подсвечиваем */
   highlightId?: string
+  /** ученик из ссылки новый (иначе — обновлённый: значок «новый» не нужен) */
+  highlightNew?: boolean
 }
 
 type S = (typeof CLASS)['ru']
@@ -107,11 +109,24 @@ function exportCsv(c: ClassData, s: S, t: Props['t'], weakNames: (r: StudentRepo
   setTimeout(() => URL.revokeObjectURL(a.href), 1000)
 }
 
-export default function ClassModal({ onClose, lang, t, nameOf, highlightId }: Props) {
+export default function ClassModal({ onClose, lang, t, nameOf, highlightId, highlightNew }: Props) {
   const s = pick(CLASS, lang)
   const d = pick(DIARY, lang)
   const [data, setData] = useState<ClassData>(readClass)
   const [open, setOpen] = useState<string | null>(null)
+  const backRef = useRef<HTMLButtonElement>(null)
+  // фокус не теряется при переходах список ⇄ ученик: кнопка, на которой он был, исчезает
+  const lastOpened = useRef<string | null>(null)
+  useEffect(() => {
+    if (open) {
+      lastOpened.current = open
+      backRef.current?.focus()
+    } else if (lastOpened.current) {
+      const el = document.querySelector<HTMLElement>(`[data-student="${lastOpened.current}"]`)
+      if (el) el.focus()
+      else closeRef.current?.focus()
+    }
+  }, [open])
   const closeRef = useRef<HTMLButtonElement>(null)
   const hiRef = useRef<HTMLButtonElement>(null)
 
@@ -181,7 +196,7 @@ export default function ClassModal({ onClose, lang, t, nameOf, highlightId }: Pr
       >
         <div className="mb-3 flex items-center justify-between gap-2">
           {cur && (
-            <button onClick={() => setOpen(null)} aria-label={s.back} className={`${BTN} w-10 px-0`}>
+            <button ref={backRef} onClick={() => setOpen(null)} aria-label={s.back} className={`${BTN} w-10 px-0`}>
               <ChevronLeft size={20} />
             </button>
           )}
@@ -273,6 +288,7 @@ export default function ClassModal({ onClose, lang, t, nameOf, highlightId }: Pr
                   <li key={id}>
                     <button
                       ref={hi ? hiRef : undefined}
+                      data-student={id}
                       onClick={() => setOpen(id)}
                       className={`w-full cursor-pointer p-3 text-left hover:bg-[var(--c-241c11)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] ${BOX} ${hi ? 'border-[var(--c-f2c14e)]' : ''}`}
                     >
@@ -280,7 +296,7 @@ export default function ClassModal({ onClose, lang, t, nameOf, highlightId }: Pr
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <span className="truncate font-semibold text-[var(--c-f5e8cd)]">{st.name}</span>
-                            {hi && (
+                            {hi && highlightNew && (
                               <span className="shrink-0 rounded-full bg-[var(--c-2f6b3b)] px-2 text-xs text-[var(--c-f5e8cd)]">{s.newBadge}</span>
                             )}
                           </div>

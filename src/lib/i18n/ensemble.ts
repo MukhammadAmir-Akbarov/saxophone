@@ -3,6 +3,7 @@
 export const ENSEMBLE_I18N = {
   ru: {
     title: 'Ансамбль',
+    notForInst: 'Не для этого саксофона: партия ушла бы выше верхнего голоса',
     intro: 'Одна мелодия на три голоса: каждый играет свою партию на своём саксофоне, остальные партии звучат синтезом.',
     back: 'К списку мелодий',
     yourInst: 'Ваш строй: {1}',
@@ -31,6 +32,7 @@ export const ENSEMBLE_I18N = {
   },
   uz: {
     title: 'Ansambl',
+    notForInst: 'Bu saksofon uchun emas: partiya yuqori ovozdan baland chiqib ketadi',
     intro: 'Bitta kuy uch ovozda: har kim o‘z saksofonida o‘z partiyasini chaladi, qolgan partiyalar sintez bilan yangraydi.',
     back: 'Kuylar ro‘yxatiga',
     yourInst: 'Sizning sozingiz: {1}',
@@ -59,6 +61,7 @@ export const ENSEMBLE_I18N = {
   },
   en: {
     title: 'Ensemble',
+    notForInst: 'Not for this saxophone: the part would sound above the upper voice',
     intro: 'One melody in three voices: everyone plays their own part on their own saxophone, the other parts are synthesized.',
     back: 'Back to melodies',
     yourInst: 'Your instrument: {1}',

@@ -4,7 +4,7 @@
 // поэтому decodeReport разбирает её как недоверенный ввод.
 
 import { NOTES } from '../data/notes'
-import { dayKey, daySeconds, readDiary, readGoalMin, streakDays, weekDays } from './practice'
+import { dayKey, daySeconds, readDiary, readGoalMin, streakDays, weekDays , shiftDay} from './practice'
 import type { Instrument } from './sound'
 
 export interface StudentReport {
@@ -104,7 +104,8 @@ export function buildReport(name: string = readStudentName()): StudentReport {
     name: name.trim().slice(0, 40),
     inst: INSTS.includes(inst as Instrument) ? (inst as Instrument) : 'alto',
     at: today,
-    days: week.map((day) => Math.round(daySeconds(day, d) / 60)),
+    // вниз, как в серии дней дневника: 19½ минут — это ещё не цель 20
+    days: week.map((day) => Math.floor(daySeconds(day, d) / 60)),
     byAct,
     goal,
     streak: streakDays(goal, d, today),
@@ -149,6 +150,11 @@ export function decodeReport(s: string): StudentReport | null {
   const name = str(o.name, 40)
   if (o.v !== 1 || typeof o.id !== 'string' || !ID.test(o.id) || !name) return null
   if (typeof o.at !== 'string' || !DATE.test(o.at)) return null
+  // дата из ссылки должна быть настоящей и не из будущего: иначе «отчёт из 2099»
+  // навсегда стал бы последним и переименовал ученика
+  const atDate = new Date(o.at + 'T00:00:00')
+  if (Number.isNaN(atDate.getTime()) || atDate.toLocaleDateString('sv') !== o.at) return null
+  if (o.at > shiftDay(dayKey(), 1)) return null
   // неделя — ровно 7 дней; короче дополняем нулями слева, чтобы «сегодня» осталось последним
   const days = Array.isArray(o.days) ? o.days.slice(-7).map((v) => num(v, 0, 1440)) : []
   while (days.length < 7) days.unshift(0)
@@ -193,11 +199,13 @@ export function readClass(): ClassData {
   const v = readJSON(CLASS_KEY) as ClassData | null
   return v && typeof v === 'object' && v.students && typeof v.students === 'object' ? v : { students: {} }
 }
-export function writeClass(c: ClassData) {
+/** false — не сохранилось (память переполнена, приватный режим) */
+export function writeClass(c: ClassData): boolean {
   try {
     localStorage.setItem(CLASS_KEY, JSON.stringify(c))
+    return true
   } catch {
-    /* переполнен/приватный режим — класс не сохранится, но и не упадём */
+    return false
   }
 }
 
@@ -216,10 +224,10 @@ export function mergeReport(c: ClassData, r: StudentReport): { data: ClassData; 
   }
 }
 
-export function addReport(r: StudentReport): { isNew: boolean; name: string } {
+export function addReport(r: StudentReport): { isNew: boolean; name: string; saved: boolean } {
   const { data, isNew } = mergeReport(readClass(), r)
-  writeClass(data)
-  return { isNew, name: data.students[r.id].name }
+  const saved = writeClass(data)
+  return { isNew, name: data.students[r.id].name, saved }
 }
 
 export function removeStudent(id: string) {
@@ -232,7 +240,7 @@ export function removeStudent(id: string) {
  * Для Home при загрузке: берёт ?report= один раз и убирает его из адреса —
  * иначе перезагрузка страницы или «добавить на главный экран» тащили бы отчёт снова.
  */
-export function ingestReportFromUrl(): { added: boolean; name: string; id: string } | null {
+export function ingestReportFromUrl(): { added: boolean; name: string; id: string; saved: boolean } | null {
   const params = new URLSearchParams(location.search)
   const raw = params.get('report')
   if (raw === null) return null
@@ -241,8 +249,8 @@ export function ingestReportFromUrl(): { added: boolean; name: string; id: strin
   history.replaceState(history.state, '', location.pathname + (q ? '?' + q : '') + location.hash)
   const r = decodeReport(raw)
   if (!r) return null
-  const { isNew, name } = addReport(r)
-  return { added: isNew, name, id: r.id }
+  const { isNew, name, saved } = addReport(r)
+  return { added: isNew, name, id: r.id, saved }
 }
 
 if (import.meta.env?.DEV && typeof window !== 'undefined') {

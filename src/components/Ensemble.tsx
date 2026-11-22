@@ -11,7 +11,7 @@ import { melodyTitle, MELODIES, type Melody } from '../data/melodies'
 import FingeringDiagram from './FingeringDiagram'
 import { pick, type Lang, type STRINGS } from '../lib/i18n'
 import { ENSEMBLE_I18N } from '../lib/i18n/ensemble'
-import { buildParts, octaveShift, PART_IDS, partForInstrument, playParts, type EnsPlayback, type PartId, type WrittenNote } from '../lib/ensemble'
+import { buildParts, fitsInstrument, octaveShift, PART_IDS, partForInstrument, playParts, type EnsPlayback, type PartId, type WrittenNote } from '../lib/ensemble'
 import { clampBpm, onMetronomeChange, startMetronome, stopMetronome } from '../lib/metronome'
 import { usePersisted } from '../lib/persist'
 import { keyIsSharp } from '../lib/scales'
@@ -118,7 +118,8 @@ function Room({ melody, instrument, lang, t, s, bpm, setBpm, onBack }: RoomProps
   const chipsRef = useRef<HTMLDivElement>(null)
 
   // localStorage мог прийти от старой версии с другим id партии — не падаем
-  const my: PartId = PART_IDS.includes(part) ? part : 'melody'
+  // партия не подходит этому строю (или пришла из старой версии) — играем мелодию
+  const my: PartId = PART_IDS.includes(part) && fitsInstrument(parts, part, instrument) ? part : 'melody'
   const mine = partForInstrument(parts[my], instrument)
   const shift = octaveShift(parts[my], instrument)
   const sharp = sharpFor(melody, instrument)
@@ -170,7 +171,9 @@ function Room({ melody, instrument, lang, t, s, bpm, setBpm, onBack }: RoomProps
     // метроном ставит первый щелчок на currentTime + 0.08 — считаем от тех же часов
     // ponytail: metronome.ts не отдаёт своё время старта; расхождение — доли миллисекунды
     const begin = ac.currentTime + 0.08 + melody.meter * beat
-    startMetronome({ bpm, beats: melody.meter, owner: 'ensemble' })
+    // stopAfter: в фоновой вкладке rAF спит и конец пьесы по нему не заметить —
+    // метроном сам замолкает, когда пьеса кончилась
+    startMetronome({ bpm, beats: melody.meter, owner: 'ensemble', stopAfter: begin - ac.currentTime + total * beat + 0.1 })
     const play = Object.fromEntries(PART_IDS.filter((id) => id !== my || withMe).map((id) => [id, parts[id]]))
     pb.current = playParts(play, bpm, begin, { melody: gainOf('melody', mix), second: gainOf('second', mix), bass: gainOf('bass', mix) }, { [my]: shift })
     setPlaying(true)
@@ -229,7 +232,9 @@ function Room({ melody, instrument, lang, t, s, bpm, setBpm, onBack }: RoomProps
                   setPart(id)
                 }}
                 aria-pressed={my === id}
-                className={SEG(my === id)}
+                disabled={!fitsInstrument(parts, id, instrument)}
+                title={fitsInstrument(parts, id, instrument) ? undefined : s.notForInst}
+                className={`${SEG(my === id)} disabled:cursor-not-allowed disabled:opacity-40`}
               >
                 {labels[id]}
               </button>
@@ -389,7 +394,9 @@ function Score({ melody, parts, instrument, t, s, labels }: ScoreProps) {
                       {t[i]}
                       {sh !== 0 && <span className="ml-1 text-xs font-normal text-[var(--c-a08c64)]">{(Math.abs(sh) > 12 ? '15m' : '8v') + (sh > 0 ? 'a' : 'b')}</span>}
                     </th>
-                    <td className="whitespace-nowrap py-1.5 font-mono text-xs">{line(partForInstrument(parts[id], i), sharpFor(melody, i))}</td>
+                    <td className="whitespace-nowrap py-1.5 font-mono text-xs">
+                      {fitsInstrument(parts, id, i) ? line(partForInstrument(parts[id], i), sharpFor(melody, i)) : <span className="font-sans text-[var(--c-7a6845)]">{s.notForInst}</span>}
+                    </td>
                   </tr>
                 )
               })}

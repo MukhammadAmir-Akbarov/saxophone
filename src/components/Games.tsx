@@ -353,9 +353,12 @@ function RhythmGame({ s, onFinish }: { s: S; onFinish: (v: number) => void }) {
   // выход посреди раунда — запланированные щелчки иначе доиграли бы такт
   useEffect(() => () => silence(), [])
 
-  const start = () => {
+  const start = async () => {
     silence()
     const ac = audioCtx()
+    // спящий контекст (iOS после звонка) стоит на месте: пересчёт аудио-времени во
+    // время performance.now дал бы сдвиг на всё время сна — сначала будим и ждём
+    if (ac.state !== 'running') await ac.resume().catch(() => {})
     // запас 0.3 с: контекст мог только что проснуться после жеста
     const t0 = ac.currentTime + 0.3
     const at = (beats: number) => t0 + beats * BEAT
@@ -565,6 +568,7 @@ function KeysGame({ s, lang, instrument, onFinish }: { s: S; lang: Lang; instrum
             missing={missing}
             extra={extra}
             onToggle={tapMode ? answer : undefined}
+            hideLabels={!tapMode}
             label={s.diagram}
             bisLabel={name('bis')}
             names={names}

@@ -225,6 +225,7 @@ const RU = {
   myClass: 'Мой класс',
   classAdded: 'В классе новый ученик: {1}',
   classUpdated: 'Отчёт обновлён: {1}',
+  classSaveFailed: 'Не удалось сохранить отчёт: память браузера переполнена или включён приватный режим',
   more: 'Ещё',
 }
 
@@ -427,6 +428,7 @@ const UZ: Dict = {
   myClass: 'Mening sinfim',
   classAdded: 'Sinfda yangi o‘quvchi: {1}',
   classUpdated: 'Hisobot yangilandi: {1}',
+  classSaveFailed: 'Hisobotni saqlab bo‘lmadi: brauzer xotirasi to‘lgan yoki maxfiy rejim yoqilgan',
   more: 'Yana',
 }
 
@@ -627,6 +629,7 @@ const EN: Dict = {
   myClass: 'My class',
   classAdded: 'New student in your class: {1}',
   classUpdated: 'Report updated: {1}',
+  classSaveFailed: 'Could not save the report: browser storage is full or private mode is on',
   more: 'More',
 }
 export const STRINGS: Record<Lang, Dict> = { ru: RU, uz: UZ, uzc: cyrDict(UZ), en: EN }

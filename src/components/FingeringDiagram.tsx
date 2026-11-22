@@ -74,11 +74,13 @@ interface Props {
   label?: string
   /** полные имена клапанов на языке интерфейса (для диктора); без них — русские */
   names?: Partial<Record<KeyId, string>>
+  /** без подписей клапанов — для игры «угадай клапан», иначе ответ написан рядом */
+  hideLabels?: boolean
 }
 
 const NONE = new Set<KeyId>()
 
-export default function FingeringDiagram({ pressed, onToggle, missing = NONE, extra = NONE, bisLabel = 'Бис', label = 'Схема клапанов саксофона', names }: Props) {
+export default function FingeringDiagram({ pressed, onToggle, missing = NONE, extra = NONE, bisLabel = 'Бис', label = 'Схема клапанов саксофона', names, hideLabels }: Props) {
   const interactive = !!onToggle
   return (
     <svg
@@ -147,7 +149,7 @@ export default function FingeringDiagram({ pressed, onToggle, missing = NONE, ex
           >
             {k.kind === 'ellipse' ? (
               <ellipse cx={k.cx} cy={k.cy} rx={k.rx} ry={k.ry} {...common}>
-                <title>{name}</title>
+                {!hideLabels && <title>{name}</title>}
               </ellipse>
             ) : null}
             {interactive && SMALL.has(k.id) && (
@@ -162,10 +164,10 @@ export default function FingeringDiagram({ pressed, onToggle, missing = NONE, ex
                 rx={9}
                 {...common}
               >
-                <title>{name}</title>
+                {!hideLabels && <title>{name}</title>}
               </rect>
             )}
-            <text
+            {!hideLabels && <text
               x={k.lx}
               y={k.ly}
               textAnchor={k.anchor}
@@ -174,7 +176,7 @@ export default function FingeringDiagram({ pressed, onToggle, missing = NONE, ex
               style={{ fill: bad ? 'var(--c-ff6b57)' : miss ? 'var(--c-5fd27a)' : on ? 'var(--c-f2c14e)' : 'var(--c-8d7956)', transition: 'fill 160ms ease-out' }}
             >
               {text}
-            </text>
+            </text>}
           </g>
         )
       })}

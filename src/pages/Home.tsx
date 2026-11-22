@@ -157,7 +157,12 @@ export default function Home() {
   const [builderOpen, setBuilderOpen] = useState(false)
   const [programsOpen, setProgramsOpen] = useState(false)
   const [classOpen, setClassOpen] = useState(false)
-  const [classHi, setClassHi] = useState<string | undefined>()
+  const [classHi, setClassHi] = useState<{ id: string; added: boolean } | undefined>()
+  // закрыли класс — подсветка «из ссылки» больше не нужна
+  const closeClass = useCallback(() => {
+    setClassOpen(false)
+    setClassHi(undefined)
+  }, [])
   // текущая программа занятий: какая и на какой неделе (с нуля)
   const [program, setProgram] = usePersisted<{ programId: string; week: number } | null>('program', null)
   // подсказки первого входа: один раз; повтор — из Настроек.
@@ -239,8 +244,8 @@ export default function Home() {
   useEffect(() => {
     const res = INGESTED
     if (!res) return
-    setToast((res.added ? t.classAdded : t.classUpdated).replace('{1}', res.name))
-    setClassHi(res.id)
+    setToast(res.saved ? (res.added ? t.classAdded : t.classUpdated).replace('{1}', res.name) : t.classSaveFailed)
+    setClassHi({ id: res.id, added: res.added })
     setClassOpen(true)
     setTourDone(true) // учителю с отчётом подсказки новичка ни к чему
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1142,7 +1147,7 @@ export default function Home() {
       {diaryOpen && <DiaryModal onClose={closeDiary} lang={lang} t={t} nameOf={nameOf} />}
       {selfRecOpen && <SelfRecord onClose={closeSelfRec} instrument={instrument} sharp={sharpMode} lang={lang} t={t} />}
       {printOpen && <PrintChart onClose={closePrint} lang={lang} t={t} nameOf={nameOf} instrument={instrument} />}
-      {classOpen && <ClassModal onClose={() => setClassOpen(false)} lang={lang} t={t} nameOf={nameOf} highlightId={classHi} />}
+      {classOpen && <ClassModal onClose={closeClass} lang={lang} t={t} nameOf={nameOf} highlightId={classHi?.id} highlightNew={classHi?.added} />}
       {programsOpen && (
         <ProgramsModal
           onClose={() => setProgramsOpen(false)}
