@@ -2,8 +2,26 @@
 // Данные нот в notes.ts остаются на русском; на узбекский их переводят функции ниже.
 
 import type { KeyId, SaxNote } from '../data/notes'
+import { cyrDict, toCyrillic } from './translit'
 
-export type Lang = 'ru' | 'uz'
+/** ru — русский, uz — узбекский (латиница), uzc — узбекский (кириллица), en — английский */
+export type Lang = 'ru' | 'uz' | 'uzc' | 'en'
+export const LANGS: Array<{ id: Lang; label: string }> = [
+  { id: 'ru', label: 'Русский' },
+  { id: 'uz', label: 'Oʻzbekcha' },
+  { id: 'uzc', label: 'Ўзбекча' },
+  { id: 'en', label: 'English' },
+]
+
+/**
+ * Словарь фичи на нужном языке. Фича даёт ru и uz (и en, когда переведено);
+ * кириллица выводится из uz автоматически, английского нет — русский.
+ */
+export function pick<T extends Record<string, string>>(d: { ru: T; uz: T; en?: T }, lang: Lang): T {
+  if (lang === 'uzc') return cyrDict(d.uz)
+  if (lang === 'en') return d.en ?? d.ru
+  return d[lang]
+}
 
 const RU = {
   title: 'Саксофон — аппликатуры',
@@ -350,7 +368,9 @@ const UZ: Dict = {
   recExportHint: 'Yozuvlar hammada paydo bo‘lishi uchun arxivni dasturchiga yuboring — u ularni ilovaga qo‘yadi.',
 }
 
-export const STRINGS: Record<Lang, Dict> = { ru: RU, uz: UZ }
+// EN заполняется переводом; пока его нет — русский (см. pick)
+const EN: Dict | undefined = undefined
+export const STRINGS: Record<Lang, Dict> = { ru: RU, uz: UZ, uzc: cyrDict(UZ), en: EN ?? RU }
 
 const KEY_UZ: Record<KeyId, string> = {
   oct: '8va',
@@ -379,7 +399,9 @@ const KEY_UZ: Record<KeyId, string> = {
 }
 
 export function keyLabel(k: KeyId, lang: Lang, ru: Record<KeyId, string>): string {
-  return lang === 'uz' ? KEY_UZ[k] : ru[k]
+  if (lang === 'uz') return KEY_UZ[k]
+  if (lang === 'uzc') return toCyrillic(KEY_UZ[k])
+  return ru[k]
 }
 
 // Названия вариантов — это сочетания клапанов («пальм. D + L3»), поэтому их
@@ -409,11 +431,13 @@ const HINTS_UZ: Record<string, string> = {
 }
 
 export function altName(name: string, lang: Lang): string {
-  if (lang === 'ru') return name
-  return WORDS_UZ.reduce((s, [ru, uz]) => s.replaceAll(ru, uz), name)
+  if (lang === 'ru' || lang === 'en') return name
+  const uz = WORDS_UZ.reduce((s, [ru, uz]) => s.replaceAll(ru, uz), name)
+  return lang === 'uzc' ? toCyrillic(uz) : uz
 }
 
 export function hintText(note: SaxNote, lang: Lang): string | undefined {
-  if (!note.hint || lang === 'ru') return note.hint
-  return HINTS_UZ[note.hint] ?? note.hint
+  if (!note.hint || lang === 'ru' || lang === 'en') return note.hint
+  const uz = HINTS_UZ[note.hint] ?? note.hint
+  return lang === 'uzc' ? toCyrillic(uz) : uz
 }
