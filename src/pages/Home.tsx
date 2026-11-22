@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AudioLines, CalendarCheck, ChevronLeft, ChevronRight, CircleHelp, ClipboardList, Download, Ear, Ellipsis, Link2, Mic, Mic2, Printer, Settings, Timer, Volume2 } from 'lucide-react'
+import { AudioLines, BookOpen, CalendarCheck, ChevronLeft, ChevronRight, CircleHelp, ClipboardList, Download, Ear, Ellipsis, Link2, Mic, Mic2, Printer, Settings, Timer, Volume2 } from 'lucide-react'
 import { KEY_LABELS, NOTES, notationFile, type KeyId, type SaxNote } from '../data/notes'
 import FingeringDiagram from '../components/FingeringDiagram'
 import LegendModal from '../components/LegendModal'
@@ -15,10 +15,15 @@ import SettingsModal, { type Theme } from '../components/SettingsModal'
 import TaskBuilder from '../components/TaskBuilder'
 import TaskPanel from '../components/TaskPanel'
 import Trills from '../components/Trills'
+import ProgramsModal from '../components/ProgramsModal'
+import Tour from '../components/Tour'
+import { TOUR, tourSteps } from '../lib/i18n/tour'
+import { decodeMelody } from '../lib/melody'
 import { MELODIES } from '../data/melodies'
 import { TRILLS } from '../data/trills'
 import { pick } from '../lib/i18n'
 import { TASK } from '../lib/i18n/task'
+import { PROGRAMS_I18N } from '../lib/i18n/programs'
 import { usePracticeTracker, type Activity } from '../lib/practice'
 import { decodeTask, encodeTask, type Task, type TaskItem } from '../lib/task'
 import { toCyrillic } from '../lib/translit'
@@ -39,6 +44,8 @@ const URL_NOTE = NOTES.findIndex((n) => n.id === URL_PARAMS.get('note'))
 const URL_INST = INSTRUMENTS.find((i) => i === URL_PARAMS.get('inst'))
 // задание учителя (?task=…) — недоверенный ввод из ссылки, decodeTask его проверяет
 const URL_TASK = URL_PARAMS.get('task') ? decodeTask(URL_PARAMS.get('task')!) : null
+// своя мелодия учителя по ссылке (?melody=…) — тоже недоверенный ввод, decodeMelody проверяет
+const URL_MELODY = URL_PARAMS.get('melody') ? (decodeMelody(URL_PARAMS.get('melody')!) ?? undefined) : undefined
 
 type Mode = 'table' | 'quiz' | 'scales' | 'melodies' | 'trills'
 const MODES: Mode[] = ['table', 'quiz', 'scales', 'melodies', 'trills']
@@ -141,12 +148,21 @@ export default function Home() {
   const [selfRecOpen, setSelfRecOpen] = useState(false)
   const [printOpen, setPrintOpen] = useState(false)
   const [builderOpen, setBuilderOpen] = useState(false)
+  const [programsOpen, setProgramsOpen] = useState(false)
+  // текущая программа занятий: какая и на какой неделе (с нуля)
+  const [program, setProgram] = usePersisted<{ programId: string; week: number } | null>('program', null)
+  // подсказки первого входа: один раз; повтор — из Настроек.
+  // По ссылке учителя (задание/мелодия) не показываем: человек пришёл за конкретным делом.
+  const [tourDone, setTourDone] = usePersisted('tourDone', !!(URL_TASK || URL_MELODY))
+  const finishTour = useCallback(() => setTourDone(true), [setTourDone])
   const [moreOpen, setMoreOpen] = useState(false)
   const moreBtn = useRef<HTMLButtonElement>(null)
   // открытие из задания: какую мелодию/трель показать; key пересоздаёт экран с новыми настройками
   const [openMelody, setOpenMelody] = useState<string | undefined>()
   const [openTrill, setOpenTrill] = useState<string | undefined>()
   const [screenKey, setScreenKey] = useState(0)
+  // мелодия из ссылки: открываем экран «Мелодии» с ней (объект один на весь сеанс)
+  const [sharedMelody] = useState(URL_MELODY)
   const [installEvt, setInstallEvt] = useState<InstallEvent | null>(null)
   const railRef = useRef<HTMLDivElement>(null)
 
@@ -176,7 +192,9 @@ export default function Home() {
   const activeKeys = variant === 0 ? note.keys : (note.alts?.[variant - 1]?.keys ?? note.keys)
   const pressed = useMemo(() => new Set(activeKeys), [activeKeys])
   const kl = (k: KeyId) => keyLabel(k, lang, KEY_LABELS)
+  const keyNames = Object.fromEntries((Object.keys(KEY_LABELS) as KeyId[]).map((k) => [k, kl(k)]))
   const ts = pick(TASK, lang)
+  const tp = pick(PROGRAMS_I18N, lang)
   const melodyTitle = (id: string) => {
     const m = MELODIES.find((x) => x.id === id)
     if (!m) return id
@@ -187,7 +205,7 @@ export default function Home() {
     const n = (nid: string) => nameOf(NOTES.find((x) => x.id === nid)!)
     return tr ? `${n(tr.from)} ⇄ ${n(tr.to)}` : id
   }
-  const anyModal = settingsOpen || diaryOpen || selfRecOpen || printOpen || builderOpen
+  const anyModal = settingsOpen || diaryOpen || selfRecOpen || printOpen || builderOpen || programsOpen || !tourDone
   // стабильные onClose: окна вешают на них обработчик Escape в эффекте
   const closeDiary = useCallback(() => setDiaryOpen(false), [])
   const closeSelfRec = useCallback(() => setSelfRecOpen(false), [])
@@ -205,6 +223,12 @@ export default function Home() {
     mq.addEventListener('change', apply)
     return () => mq.removeEventListener('change', apply)
   }, [theme])
+
+  // мелодия из ссылки — сразу на экран мелодий
+  useEffect(() => {
+    if (URL_MELODY) setMode('melodies')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // задание из ссылки: сохраняем (галочки переживут перезагрузку) и раскрываем панель
   useEffect(() => {
@@ -585,7 +609,7 @@ export default function Home() {
                 <span className="hidden sm:inline">{t.install}</span>
               </button>
             )}
-            <button onClick={() => setSettingsOpen(true)} aria-label={t.settings} title={t.settings} className={`${BTN} px-0`}>
+            <button data-tour="settings" onClick={() => setSettingsOpen(true)} aria-label={t.settings} title={t.settings} className={`${BTN} px-0`}>
               <Settings size={20} />
             </button>
             <button onClick={() => setLegendOpen(true)} aria-label={t.help} className={`${BTN} px-0`}>
@@ -596,7 +620,7 @@ export default function Home() {
 
         {/* панель режимов и настроек */}
         <div className="mx-auto mt-3 flex max-w-5xl flex-wrap items-center gap-2">
-          <div className="flex max-w-full overflow-x-auto rounded-xl border border-[var(--c-4a3b22)] p-0.5" role="tablist">
+          <div data-tour="modes" className="flex max-w-full overflow-x-auto rounded-xl border border-[var(--c-4a3b22)] p-0.5" role="tablist">
             {MODES.map((m) => (
               <button
                 key={m}
@@ -624,6 +648,7 @@ export default function Home() {
           </label>
           <select
             id="instrument"
+            data-tour="instrument"
             value={instrument}
             onChange={(e) => setInstrument(e.target.value as Instrument)}
             className="h-11 cursor-pointer rounded-xl border border-[var(--c-4a3b22)] bg-[var(--c-14100a)] px-2 text-sm font-semibold text-[var(--c-e8d5ae)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
@@ -651,11 +676,12 @@ export default function Home() {
             <AudioLines size={18} />
             <span className="hidden sm:inline">{t.longTone}</span>
           </button>
-          <button onClick={() => setTunerTab('tuner')} className={BTN} title={t.tuner} aria-label={t.tuner}>
+          <button data-tour="tuner" onClick={() => setTunerTab('tuner')} className={BTN} title={t.tuner} aria-label={t.tuner}>
             <Mic size={18} />
             <span className="hidden sm:inline">{t.tuner}</span>
           </button>
           <button
+            data-tour="metronome"
             onClick={() => setMetroOpen(true)}
             className={metroOn && metronomeOwner() === 'modal' ? BTN_PRIMARY : BTN}
             title={t.metronome}
@@ -668,7 +694,7 @@ export default function Home() {
             <Ear size={18} />
             <span className="hidden sm:inline">{t.selfRecord}</span>
           </button>
-          <button onClick={() => setDiaryOpen(true)} className={BTN} title={t.diary} aria-label={t.diary}>
+          <button data-tour="diary" onClick={() => setDiaryOpen(true)} className={BTN} title={t.diary} aria-label={t.diary}>
             <CalendarCheck size={18} />
             <span className="hidden sm:inline">{t.diary}</span>
           </button>
@@ -694,6 +720,7 @@ export default function Home() {
                     [
                       [Mic2, t.recTitle, () => setRecOpen(true)],
                       [ClipboardList, ts.builderOpen, () => setBuilderOpen(true)],
+                      [BookOpen, tp.title, () => setProgramsOpen(true)],
                       [Printer, t.printChart, () => setPrintOpen(true)],
                     ] as const
                   ).map(([Icon, label, act]) => (
@@ -735,13 +762,13 @@ export default function Home() {
       {mode === 'scales' ? (
         <Scales key={screenKey} instrument={instrument} lang={lang} bpm={bpm} setBpm={setBpm} a4={a4} t={t} />
       ) : mode === 'melodies' ? (
-        <Melodies key={screenKey} instrument={instrument} lang={lang} t={t} bpm={bpm} setBpm={setBpm} sharp={sharpMode} initialMelodyId={openMelody} />
+        <Melodies key={screenKey} instrument={instrument} lang={lang} t={t} bpm={bpm} setBpm={setBpm} sharp={sharpMode} initialMelodyId={openMelody} shared={sharedMelody} />
       ) : mode === 'trills' ? (
         <Trills key={screenKey} instrument={instrument} lang={lang} t={t} sharp={sharpMode} initialId={openTrill} />
       ) : (
       <main className="mx-auto grid w-full max-w-5xl flex-1 grid-cols-1 items-start gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[1fr_340px]">
         {/* схема клапанов */}
-        <section className="order-2 flex flex-col items-center gap-3 rounded-2xl border border-[var(--c-2e2415)] bg-[var(--c-1a1509)] p-4 lg:order-1">
+        <section data-tour="diagram" className="order-2 flex flex-col items-center gap-3 rounded-2xl border border-[var(--c-2e2415)] bg-[var(--c-1a1509)] p-4 lg:order-1">
           {mode === 'table' && note.alts && note.alts.length > 0 && (
             <div className="flex flex-wrap justify-center gap-1.5" role="group" aria-label={t.variants}>
               {[t.main, ...note.alts.map((a) => altName(a.name, lang))].map((label, vi) => (
@@ -766,6 +793,7 @@ export default function Home() {
             extra={extra}
             bisLabel={t.bis}
             label={t.legendTitle}
+            names={keyNames}
           />
           <p className="min-h-5 text-center text-sm text-[var(--c-a08c64)]" aria-live="polite">
             {mode === 'quiz' && result && 'ok' in result && !result.ok ? (
@@ -1073,11 +1101,33 @@ export default function Home() {
             setA4State(v)
           }}
           t={t}
+          onReplayTour={() => {
+            setMode('table')
+            setTourDone(false)
+          }}
+          replayLabel={pick(TOUR, lang).replayTour}
         />
       )}
       {diaryOpen && <DiaryModal onClose={closeDiary} lang={lang} t={t} nameOf={nameOf} />}
       {selfRecOpen && <SelfRecord onClose={closeSelfRec} instrument={instrument} sharp={sharpMode} lang={lang} t={t} />}
       {printOpen && <PrintChart onClose={closePrint} lang={lang} t={t} nameOf={nameOf} instrument={instrument} />}
+      {programsOpen && (
+        <ProgramsModal
+          onClose={() => setProgramsOpen(false)}
+          lang={lang}
+          t={t}
+          current={program ?? undefined}
+          nameOf={nameOf}
+          melodyTitle={melodyTitle}
+          trillTitle={trillTitle}
+          onStart={(tk, meta) => {
+            setTask(tk)
+            setProgram(meta)
+            setProgramsOpen(false)
+          }}
+        />
+      )}
+      {!tourDone && !FULL.includes(mode) && <Tour steps={tourSteps(pick(TOUR, lang))} onDone={finishTour} lang={lang} t={t} />}
       {builderOpen && (
         <TaskBuilder
           onClose={() => setBuilderOpen(false)}

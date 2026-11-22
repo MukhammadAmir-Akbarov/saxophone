@@ -633,7 +633,7 @@ const KEY_EN: Record<KeyId, string> = {
   csh: 'C♯ (pinky)',
   lowB: 'low B',
   lowBb: 'low B♭',
-  lowA: 'low A',
+  lowA: 'low A (thumb, baritone)',
   fsh: 'F♯ key',
   sE: 'side E',
   sC: 'side C',
@@ -659,7 +659,7 @@ const KEY_UZ: Record<KeyId, string> = {
   csh: 'C♯ (jimjiloq)',
   lowB: 'pastki B',
   lowBb: 'pastki B♭',
-  lowA: 'pastki A',
+  lowA: 'pastki A (bosh barmoq, bariton)',
   fsh: 'F♯ klapani',
   sE: 'yon E',
   sC: 'yon C',
@@ -711,6 +711,7 @@ const WORDS_EN: Array<[string, string]> = [
 ]
 
 const HINTS_EN: Record<string, string> = {
+  'только баритон: клапан A — большим пальцем левой руки': 'baritone only: low A key with the left thumb',
   'боковое B♭': 'side B♭',
   'вилочная аппликатура': 'forked fingering',
   'все клапаны открыты': 'all keys open',
@@ -719,6 +720,7 @@ const HINTS_EN: Record<string, string> = {
 }
 
 const HINTS_UZ: Record<string, string> = {
+  'только баритон: клапан A — большим пальцем левой руки': 'faqat bariton: A klapani — chap qo‘l bosh barmog‘i bilan',
   'боковое B♭': 'yon B♭',
   'вилочная аппликатура': 'vilkasimon applikatura',
   'все клапаны открыты': 'barcha klapanlar ochiq',

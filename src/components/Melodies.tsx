@@ -1,17 +1,21 @@
 // Экран «Мелодии»: список мелодий + своя мелодия текстом, и три режима для
-// выбранной: «Слушать» (под метроном), «Играть с проверкой» (микрофон) и «По шагам».
+// выбранной: «Слушать» (под метроном, по желанию с аккомпанементом или «минусом»),
+// «Играть с проверкой» (микрофон) и «По шагам». Тональность сдвигается ±6 полутонов,
+// своей мелодией можно поделиться ссылкой (?melody=…).
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, ChevronLeft, ChevronRight, Minus, Music, Pencil, Play, Plus, RotateCcw, SkipForward, Square, Volume2 } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Minus, Music, Pencil, Play, Plus, RotateCcw, Save, Send, Share2, SkipForward, Square, Volume2 } from 'lucide-react'
 import { NOTES, notationFile } from '../data/notes'
 import { melodyTitle, MELODIES, type Melody } from '../data/melodies'
 import FingeringDiagram from './FingeringDiagram'
 import { pick, type Lang, type STRINGS } from '../lib/i18n'
 import { MELODIES_I18N } from '../lib/i18n/melodies'
-import { parseMelody, type MelodyNote } from '../lib/melody'
+import { startAccomp } from '../lib/accomp'
+import { encodeMelody, fitShift, parseMelody, transposeNotes, type MelodyNote, type SharedMelody } from '../lib/melody'
 import { clampBpm, onMetronomeChange, startMetronome, stopMetronome } from '../lib/metronome'
 import { usePersisted } from '../lib/persist'
-import { midiName, playNote, stopAll, writtenMidi, type Instrument } from '../lib/sound'
+import { keyIsSharp, TONIC_NAMES } from '../lib/scales'
+import { audioCtx, midiName, playNote, stopAll, writtenMidi, type Instrument } from '../lib/sound'
 import { usePitch } from '../lib/usePitch'
 
 type Strings = (typeof STRINGS)['ru']
@@ -26,8 +30,11 @@ interface Props {
   sharp: boolean
   /** открыть сразу эту мелодию (например, из задания учителя) */
   initialMelodyId?: string
-  /** открыть «Свою мелодию» с этим текстом (ссылка) — сохранённый текст не затирается, пока ученик не начнёт править */
-  initialText?: string
+  /**
+   * мелодия из ссылки ?melody= (Home разбирает её через decodeMelody). Открывается
+   * в «Своей мелодии», но сохранённую свою НЕ затирает — только по «Сохранить как свою».
+   */
+  shared?: SharedMelody
 }
 
 type Mode = 'listen' | 'check' | 'steps'
@@ -52,20 +59,81 @@ function beatsLabel(b: number): string {
 
 const noteName = (n: MelodyNote) => (n.index === null ? '' : n.sharp && NOTES[n.index].sharp ? NOTES[n.index].sharp! : NOTES[n.index].flat)
 
-export default function Melodies({ instrument, lang, t, bpm, setBpm, sharp, initialMelodyId, initialText }: Props) {
+export default function Melodies({ instrument, lang, t, bpm, setBpm, sharp, initialMelodyId, shared }: Props) {
   const s = pick(MELODIES_I18N, lang)
   const [savedCustom, setSavedCustom] = usePersisted('melodyCustom', '')
-  // текст из ссылки показываем поверх сохранённого; при первой правке он становится своим
-  const [linkText, setLinkText] = useState<string | undefined>(initialText)
-  const customText = linkText ?? savedCustom
+  const [savedTitle, setSavedTitle] = usePersisted('melodyCustomTitle', '')
+  const [savedMeter, setSavedMeter] = usePersisted('melodyCustomMeter', 4)
+  // мелодия из ссылки правится отдельно, в localStorage не попадает: чужая ссылка
+  // не должна молча стереть то, что ученик набирал сам
+  const [draft, setDraft] = useState<SharedMelody | null>(shared ?? null)
+  const custom: SharedMelody = draft ?? { title: savedTitle, text: savedCustom, meter: savedMeter }
+  const editCustom = (p: Partial<SharedMelody>) => {
+    if (draft) return setDraft({ ...draft, ...p })
+    if (p.text !== undefined) setSavedCustom(p.text)
+    if (p.title !== undefined) setSavedTitle(p.title)
+    if (p.meter !== undefined) setSavedMeter(p.meter)
+  }
+  const saveOwn = () => {
+    if (!draft) return
+    setSavedCustom(draft.text)
+    setSavedTitle(draft.title)
+    setSavedMeter(draft.meter ?? 4)
+    setDraft(null)
+  }
+  // темп из ссылки — один раз при открытии; дальше ученик двигает −/+ сам
+  const [linkBpm] = useState(shared?.bpm)
+  useEffect(() => {
+    if (linkBpm) setBpm(clampBpm(linkBpm))
+  }, [linkBpm, setBpm])
+
   const [selected, setSelected] = useState<string | null>(() =>
-    initialText !== undefined ? CUSTOM : initialMelodyId && MELODIES.some((m) => m.id === initialMelodyId) ? initialMelodyId : null,
+    shared ? CUSTOM : initialMelodyId && MELODIES.some((m) => m.id === initialMelodyId) ? initialMelodyId : null,
   )
+  // сдвиг тональности, полутоны; живёт, пока открыт экран (для каждой мелодии свой не нужен)
+  const [shift, setShift] = useState(0)
+  const [copied, setCopied] = useState(false)
 
   const melody = MELODIES.find((m) => m.id === selected)
-  const text = selected === CUSTOM ? customText : (melody?.text ?? '')
+  const text = selected === CUSTOM ? custom.text : (melody?.text ?? '')
+  const meter = melody?.meter ?? custom.meter ?? 4
   // мемоизацию делает React Compiler
   const parsed = parseMelody(text)
+
+  // ── транспозиция ──
+  // сдвиг перестал помещаться (поправили текст) — играем как написано
+  const fit = (x: number) => fitShift(parsed.notes, x)
+  const shown = fit(shift) === null ? 0 : shift
+  const eff = fit(shown) ?? 0
+  const keyPc = melody ? (((melody.key + eff) % 12) + 12) % 12 : null
+  // знаки — по новой тональности (фа мажор — бемоли, ре мажор — диезы); у своей мелодии
+  // тональность неизвестна — как в общей настройке
+  const notes = transposeNotes(parsed.notes, eff, keyPc === null ? sharp : keyIsSharp(keyPc, 'major')) ?? parsed.notes
+  const nextShift = (d: 1 | -1) => {
+    for (let x = shown + d; Math.abs(x) <= 6; x += d) if (fit(x) !== null) return x
+    return null
+  }
+  const down = nextShift(-1)
+  const up = nextShift(1)
+
+  // ── ссылка ──
+  const link = location.origin + location.pathname + '?melody=' + encodeMelody({ title: custom.title, text: custom.text, meter, bpm })
+  const shareTitle = custom.title.trim() || s.custom
+  const shareLink = async () => {
+    if (typeof navigator.share === 'function') {
+      // отмена окна «Поделиться» — тоже reject, это не ошибка
+      await navigator.share({ title: shareTitle, url: link }).catch(() => {})
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(link)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // без https/разрешения буфер недоступен — даём скопировать руками
+      window.prompt(s.share, link)
+    }
+  }
 
   const open = (id: string) => {
     const m = MELODIES.find((x) => x.id === id)
@@ -122,21 +190,53 @@ export default function Melodies({ instrument, lang, t, bpm, setBpm, sharp, init
         <button onClick={() => setSelected(null)} aria-label={s.back} className={BTN}>
           <ChevronLeft size={20} />
         </button>
-        <h2 className="font-display text-2xl text-[var(--c-f2c14e)]">{melody ? titleOf(melody, lang) : s.custom}</h2>
+        <h2 className="font-display text-2xl text-[var(--c-f2c14e)]">{melody ? titleOf(melody, lang) : custom.title.trim() || s.custom}</h2>
       </div>
 
       {selected === CUSTOM && (
         <section className="space-y-2 rounded-2xl border border-[var(--c-2e2415)] bg-[var(--c-1a1509)] p-4">
-          <label htmlFor="melodyText" className="text-sm font-semibold text-[var(--c-e8d5ae)]">
+          {draft && (
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--c-4a3b22)] bg-[var(--c-14100a)] p-3">
+              <p className="flex-1 text-sm text-[var(--c-c9b892)]">{s.sharedNote}</p>
+              <button onClick={saveOwn} className={BTN}>
+                <Save size={16} /> {s.saveOwn}
+              </button>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <label className="flex min-w-40 flex-1 flex-col gap-1 text-sm font-semibold text-[var(--c-e8d5ae)]">
+              {s.customTitle}
+              <input
+                value={custom.title}
+                onChange={(e) => editCustom({ title: e.target.value })}
+                maxLength={80}
+                placeholder={s.customTitlePh}
+                className="h-11 rounded-xl border border-[var(--c-4a3b22)] bg-[var(--c-14100a)] px-3 font-normal text-[var(--c-f0e6d2)] placeholder:text-[var(--c-5c4c2e)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--c-e8d5ae)]">
+              {s.meter}
+              <select
+                value={meter}
+                onChange={(e) => editCustom({ meter: Number(e.target.value) })}
+                className="h-11 rounded-xl border border-[var(--c-4a3b22)] bg-[var(--c-14100a)] px-3 font-normal text-[var(--c-f0e6d2)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
+              >
+                {[2, 3, 4, 6].map((m) => (
+                  <option key={m} value={m}>
+                    {m}/4
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label htmlFor="melodyText" className="block text-sm font-semibold text-[var(--c-e8d5ae)]">
             {s.customLabel}
           </label>
           <textarea
             id="melodyText"
-            value={customText}
-            onChange={(e) => {
-              setLinkText(undefined)
-              setSavedCustom(e.target.value)
-            }}
+            value={custom.text}
+            onChange={(e) => editCustom({ text: e.target.value })}
+            maxLength={4000}
             rows={3}
             spellCheck={false}
             placeholder="G4 A4 B4:2 | r B4 A4 G4:2"
@@ -148,12 +248,55 @@ export default function Melodies({ instrument, lang, t, bpm, setBpm, sharp, init
               {s.errors}: <span className="font-mono">{parsed.errors.join('  ')}</span>
             </p>
           )}
+          {parsed.notes.some((n) => n.index !== null) && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button onClick={shareLink} className={BTN}>
+                <Share2 size={16} /> {copied ? s.copied : s.share}
+              </button>
+              <a
+                href={`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareTitle)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={BTN}
+              >
+                <Send size={16} /> {s.telegram}
+              </a>
+            </div>
+          )}
         </section>
       )}
 
-      {parsed.notes.some((n) => n.index !== null) ? (
-        // key: другая мелодия — свежий плеер (курсор, таймеры, режим «с проверкой»)
-        <Player key={selected + '|' + text} notes={parsed.notes} meter={melody?.meter ?? 4} {...{ instrument, lang, t, s, bpm, setBpm, sharp }} />
+      {parsed.notes.some((n) => n.index !== null) && (
+        // ±полутон; смена тональности пересоздаёт плеер (key ниже) — игра сама остановится
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label={s.key}>
+          <span className="text-sm text-[var(--c-a08c64)]">{s.key}</span>
+          <button onClick={() => down !== null && setShift(down)} disabled={down === null} aria-label={s.keyDown} className={`${BTN} px-0`}>
+            <Minus size={16} />
+          </button>
+          <span className="min-w-16 text-center text-sm font-semibold text-[var(--c-e8d5ae)]">
+            {melody && TONIC_NAMES[melody.key] + (shown ? ' → ' : '')}
+            {keyPc !== null && shown !== 0 && TONIC_NAMES[keyPc]}
+            {shown !== 0 && <span className="ml-1 text-xs font-normal text-[var(--c-a08c64)]">({shown > 0 ? '+' + shown : '−' + -shown})</span>}
+            {!melody && shown === 0 && '0'}
+          </span>
+          <button onClick={() => up !== null && setShift(up)} disabled={up === null} aria-label={s.keyUp} className={`${BTN} px-0`}>
+            <Plus size={16} />
+          </button>
+          {eff !== shown && <span className="text-xs text-[var(--c-d9a441)]">{eff > shown ? s.octUp : s.octDown}</span>}
+          {down === null && up === null && <span className="text-xs text-[var(--c-a08c64)]">{s.noShift}</span>}
+        </div>
+      )}
+
+      {notes.some((n) => n.index !== null) ? (
+        // key: другая мелодия/тональность — свежий плеер (курсор, таймеры, режим «с проверкой»)
+        <Player
+          key={selected + '|' + text + '|' + eff + '|' + meter}
+          notes={notes}
+          meter={meter}
+          chords={melody?.chords}
+          shift={eff}
+          {...{ instrument, lang, t, s, bpm, setBpm, sharp }}
+        />
       ) : (
         <p className="text-sm text-[var(--c-a08c64)]">{s.empty}</p>
       )}
@@ -164,6 +307,10 @@ export default function Melodies({ instrument, lang, t, bpm, setBpm, sharp, init
 interface PlayerProps {
   notes: MelodyNote[]
   meter: number
+  /** аккорды в письменной тональности (у своей мелодии их нет) */
+  chords?: string
+  /** сдвиг тональности, полутоны — аккомпанементу (ноты уже сдвинуты) */
+  shift: number
   instrument: Instrument
   lang: Lang
   t: Strings
@@ -173,9 +320,13 @@ interface PlayerProps {
   sharp: boolean
 }
 
-function Player({ notes, meter, instrument, t, s, bpm, setBpm, sharp }: PlayerProps) {
+function Player({ notes, meter, chords, shift, instrument, t, s, bpm, setBpm, sharp }: PlayerProps) {
   const [mode, setMode] = useState<Mode>('listen')
   const [clicks, setClicks] = usePersisted('melodyClicks', true)
+  const [accomp, setAccomp] = usePersisted('melodyAccomp', true)
+  // «минус»: аккорды + метроном без мелодии — ученик играет её сам поверх
+  const [minus, setMinus] = usePersisted('melodyMinus', false)
+  const accompStop = useRef<(() => void) | null>(null)
   const first = Math.max(0, notes.findIndex((n) => n.index !== null))
   const [pos, setPos] = useState(first)
   const [playing, setPlaying] = useState(false)
@@ -213,6 +364,8 @@ function Player({ notes, meter, instrument, t, s, bpm, setBpm, sharp }: PlayerPr
         if (r) return
         timers.current.forEach(clearTimeout)
         timers.current = []
+        accompStop.current?.()
+        accompStop.current = null
         setPlaying(false)
         setCountIn(0)
       }),
@@ -226,6 +379,7 @@ function Player({ notes, meter, instrument, t, s, bpm, setBpm, sharp }: PlayerPr
   useEffect(
     () => () => {
       timers.current.forEach(clearTimeout)
+      accompStop.current?.()
       if (playingRef.current) stopMetronome()
       stopAll()
     },
@@ -238,6 +392,8 @@ function Player({ notes, meter, instrument, t, s, bpm, setBpm, sharp }: PlayerPr
 
   const stopPlay = () => {
     clearTimers()
+    accompStop.current?.()
+    accompStop.current = null
     if (playingRef.current) stopMetronome()
     stopAll()
   }
@@ -256,6 +412,11 @@ function Player({ notes, meter, instrument, t, s, bpm, setBpm, sharp }: PlayerPr
     setPlaying(true)
     setCountIn(meter)
     const beatSec = 60 / bpm
+    const silent = !!chords && minus
+    // Метроном ставит первый щелчок на currentTime + 0.08 — читаем часы в той же задаче,
+    // что и startMetronome, и считаем первую долю мелодии после такта отсчёта.
+    // ponytail: metronome.ts не отдаёт своё время старта; расхождение — доли миллисекунды
+    const t0 = audioCtx().currentTime
     // ponytail: темп фиксируется на старте; сменили −/+ — «Стоп» и снова «Сыграть»
     startMetronome({
       bpm,
@@ -278,6 +439,8 @@ function Player({ notes, meter, instrument, t, s, bpm, setBpm, sharp }: PlayerPr
           if (starts[i] < k || starts[i] >= k + 1) return
           const go = () => {
             setPos(i)
+            // в «минусе» ноту только подсвечиваем — играет ученик
+            if (silent) return
             if (n.index === null) stopAll()
             else {
               const sn = NOTES[n.index]
@@ -291,6 +454,7 @@ function Player({ notes, meter, instrument, t, s, bpm, setBpm, sharp }: PlayerPr
         })
       },
     })
+    if (chords && (accomp || minus)) accompStop.current = startAccomp(chords, bpm, t0 + 0.08 + meter * beatSec, instrument, shift)
   }
 
   const go = (k: number) => {
@@ -341,7 +505,26 @@ function Player({ notes, meter, instrument, t, s, bpm, setBpm, sharp }: PlayerPr
             {t.clicks}
           </label>
         )}
+        {mode === 'listen' && chords && (
+          <>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-[var(--c-c9b892)]">
+              <input
+                type="checkbox"
+                checked={accomp || minus}
+                onChange={(e) => setAccomp(e.target.checked)}
+                disabled={playing || minus}
+                className="h-4 w-4 accent-[var(--c-d9a441)]"
+              />
+              {s.accomp}
+            </label>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-[var(--c-c9b892)]">
+              <input type="checkbox" checked={minus} onChange={(e) => setMinus(e.target.checked)} disabled={playing} className="h-4 w-4 accent-[var(--c-d9a441)]" />
+              {s.minus}
+            </label>
+          </>
+        )}
       </div>
+      {mode === 'listen' && chords && minus && <p className="text-xs text-[var(--c-a08c64)]">{s.minusHint}</p>}
 
       {/* лента нот: имя + длительность в долях */}
       <div ref={chipsRef} className="flex gap-1.5 overflow-x-auto pb-1" role="list" aria-label={s.notes}>

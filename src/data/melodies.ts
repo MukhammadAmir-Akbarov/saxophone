@@ -12,7 +12,7 @@
 
 import type { Lang } from '../lib/i18n'
 import { toCyrillic } from '../lib/translit'
-import { parseMelody, totalBeats } from '../lib/melody'
+import { chordsBeats, parseChords, parseMelody, totalBeats } from '../lib/melody'
 
 export interface Melody {
   id: string
@@ -24,6 +24,13 @@ export interface Melody {
   /** 1 — первые недели, 3 — пунктир и восьмые */
   level: 1 | 2 | 3
   text: string
+  /** письменная тоника мажора (0…11, C = 0) — для названия тональности при сдвиге */
+  key: number
+  /**
+   * Аккомпанемент: «аккорд:доли» в той же письменной тональности, такт в такт с text
+   * (паузы затакта — тоже: там «r» — тишина). Простая функциональная гармония: I, IV, V(7), vi.
+   */
+  chords: string
 }
 
 export const MELODIES: Melody[] = [
@@ -34,6 +41,8 @@ export const MELODIES: Melody[] = [
     bpm: 90,
     level: 1,
     // классика первого урока: только B–A–G
+    key: 7,
+    chords: 'G D G:2 | G D G:2 | G:2 D7:2 | G D7 G:2',
     text: 'B4 A4 G4:2 | B4 A4 G4:2 | G4:0.5 G4:0.5 G4:0.5 G4:0.5 A4:0.5 A4:0.5 A4:0.5 A4:0.5 | B4 A4 G4:2',
   },
   {
@@ -42,6 +51,8 @@ export const MELODIES: Melody[] = [
     meter: 4,
     bpm: 100,
     level: 1,
+    key: 7,
+    chords: 'G:4 | G:4 | D:4 | G:4 | G:4 | G:4 | D7:4 | G:4',
     text: 'B4 A4 G4 A4 | B4 B4 B4:2 | A4 A4 A4:2 | B4 D5 D5:2 | B4 A4 G4 A4 | B4 B4 B4 B4 | A4 A4 B4 A4 | G4:4',
   },
   {
@@ -50,6 +61,8 @@ export const MELODIES: Melody[] = [
     meter: 4,
     bpm: 90,
     level: 1,
+    key: 7,
+    chords: 'G:4 | G:2 D:2 | G:2 D:2 | G:4 | G:4 | G:2 D:2 | G:2 D:2 | G:4 | D:4 | A7:4 | A7:4 | D:4 | G:4 | G:2 D:2 | G:2 D:2 | G:4',
     text:
       'G4 G4 G4 A4 | B4:2 A4:2 | G4 B4 A4 A4 | G4:4 | G4 G4 G4 A4 | B4:2 A4:2 | G4 B4 A4 A4 | G4:4 | ' +
       'A4 A4 A4 A4 | E4:2 E4:2 | A4 G4 F#4 E4 | D4:4 | G4 G4 G4 A4 | B4:2 A4:2 | G4 B4 A4 A4 | G4:4',
@@ -61,6 +74,8 @@ export const MELODIES: Melody[] = [
     bpm: 90,
     level: 2,
     // фа мажор: первое знакомство с B♭
+    key: 5,
+    chords: 'F:4 | Bb:2 F:2 | Bb:2 F:2 | C7:2 F:2 | F:2 Bb:2 | F:2 C:2 | F:2 Bb:2 | F:2 C:2 | F:4 | Bb:2 F:2 | Bb:2 F:2 | C7:2 F:2',
     text:
       'F4 F4 C5 C5 | D5 D5 C5:2 | Bb4 Bb4 A4 A4 | G4 G4 F4:2 | C5 C5 Bb4 Bb4 | A4 A4 G4:2 | ' +
       'C5 C5 Bb4 Bb4 | A4 A4 G4:2 | F4 F4 C5 C5 | D5 D5 C5:2 | Bb4 Bb4 A4 A4 | G4 G4 F4:2',
@@ -71,6 +86,8 @@ export const MELODIES: Melody[] = [
     meter: 4,
     bpm: 100,
     level: 2,
+    key: 7,
+    chords: 'G:4 | G:4 | G:4 | G:4 | D7:2 G:2 | D7:2 G:2 | G D7 G:2 | G D7 G:2',
     text:
       'G4 A4 B4 G4 | G4 A4 B4 G4 | B4 C5 D5:2 | B4 C5 D5:2 | ' +
       'D5:0.5 E5:0.5 D5:0.5 C5:0.5 B4 G4 | D5:0.5 E5:0.5 D5:0.5 C5:0.5 B4 G4 | G4 D4 G4:2 | G4 D4 G4:2',
@@ -81,6 +98,8 @@ export const MELODIES: Melody[] = [
     meter: 4,
     bpm: 100,
     level: 2,
+    key: 7,
+    chords: 'G:4 | D7:2 G:2 | G:4 | G:2 D:2 | G:4 | D7:2 G:2 | G:4 | D7:2 G:2 | D:2 G:2 | D:2 G:2 | D:2 G D | G:2 D:2 | G:4 | D7:2 G:2 | G:4 | D7:2 G:2',
     text:
       'B4 B4 C5 D5 | D5 C5 B4 A4 | G4 G4 A4 B4 | B4:1.5 A4:0.5 A4:2 | ' +
       'B4 B4 C5 D5 | D5 C5 B4 A4 | G4 G4 A4 B4 | A4:1.5 G4:0.5 G4:2 | ' +
@@ -93,6 +112,8 @@ export const MELODIES: Melody[] = [
     meter: 4,
     bpm: 100,
     level: 2,
+    key: 7,
+    chords: 'G:4 | G:4 | D7:4 | G:4 | G:4 | G:4 | D7:4 | G:4',
     text:
       'D5:1.5 E5:0.5 D5 C5 | B4 C5 D5:2 | A4 B4 C5:2 | B4 C5 D5:2 | ' +
       'D5:1.5 E5:0.5 D5 C5 | B4 C5 D5:2 | A4:2 D5:2 | B4 G4:3',
@@ -104,6 +125,8 @@ export const MELODIES: Melody[] = [
     bpm: 110,
     level: 2,
     // затакт в три доли: «Oh when the | saints»
+    key: 7,
+    chords: 'G:4 | G:4 | G:4 | G:4 | G:4 | G:4 | G:4 | D7:4 | G:4 | G7:4 | G7:4 | G7 C:3 | G:4 | G:4 | D7:4 | G:4',
     text:
       'r G4 B4 C5 | D5:4 | r G4 B4 C5 | D5:4 | r G4 B4 C5 | D5:2 B4:2 | G4:2 B4:2 | A4:4 | ' +
       'r B4 B4 A4 | G4:3 G4 | B4:2 D5 D5 | D5 C5:3 | r B4 C5 D5 | B4:2 G4:2 | A4:4 | G4:4',
@@ -114,6 +137,8 @@ export const MELODIES: Melody[] = [
     meter: 4,
     bpm: 120,
     level: 3,
+    key: 7,
+    chords: 'G:4 | G:4 | G:4 | G:4 | C:4 | C G:3 | A7:4 | D7:4 | G:4 | G:4 | G:4 | G:4 | C:4 | C G:3 | D7:4 | G:4',
     text:
       'B4 B4 B4:2 | B4 B4 B4:2 | B4 D5 G4:1.5 A4:0.5 | B4:4 | ' +
       'C5 C5 C5:1.5 C5:0.5 | C5 B4 B4 B4:0.5 B4:0.5 | B4 A4 A4 B4 | A4:2 D5:2 | ' +
@@ -127,6 +152,8 @@ export const MELODIES: Melody[] = [
     bpm: 90,
     level: 3,
     // затакт «Hap-py» — пунктир: 3/4 + 1/4 доли
+    key: 7,
+    chords: 'r:3 | G:3 | D7:3 | D7:3 | G:3 | G:3 | D7:3 | G:2 D7 | G:3',
     text:
       'r:2 D4:0.75 D4:0.25 | E4 D4 G4 | F#4:2 D4:0.75 D4:0.25 | E4 D4 A4 | G4:2 D4:0.75 D4:0.25 | ' +
       'D5 B4 G4 | F#4 E4 C5:0.75 C5:0.25 | B4 G4 A4 | G4:3',
@@ -138,6 +165,8 @@ export const MELODIES: Melody[] = [
     bpm: 72,
     level: 3,
     // «me» тянется через тактовую черту (лига) — одна нота на 5 долей, без повторной атаки
+    key: 7,
+    chords: 'r:3 | G:3 | G:3 | C:3 | G:3 | G:3 | G:3 | D:3 | D:3 | G:3 | G7:3 | C:3 | G:3 | Em:3 | G:2 D7 | G:3',
     text:
       'r:2 D4 | G4:2 B4:0.5 G4:0.5 | B4:2 A4 | G4:2 E4 | D4:2 D4 | G4:2 B4:0.5 G4:0.5 | B4:2 A4 | D5:5 B4 | ' +
       'D5:2 B4:0.5 G4:0.5 | B4:2 A4 | G4:2 E4 | D4:2 D4 | G4:2 B4:0.5 G4:0.5 | B4:2 A4 | G4:3',
@@ -151,6 +180,9 @@ if (import.meta.env?.DEV && typeof window !== 'undefined') {
     const p = parseMelody(m.text)
     console.assert(p.errors.length === 0, 'melody errors', m.id, p.errors)
     console.assert(totalBeats(p.notes) % m.meter === 0, 'melody bars', m.id, totalBeats(p.notes))
+    // аккорды идут такт в такт с мелодией: иначе аккомпанемент уедет к концу
+    const c = parseChords(m.chords)
+    console.assert(c.errors.length === 0 && chordsBeats(c.chords) === totalBeats(p.notes), 'melody chords', m.id, c.errors, chordsBeats(c.chords))
   }
 }
 

@@ -42,7 +42,8 @@ const R123: KeyId[] = ['r1', 'r2', 'r3']
 
 export const NOTES: SaxNote[] = [
   // ── Первая октава (малая) ─────────────────────────────────────────────
-  { id: 'a_3', flat: 'A3', sharp: null, sound: false, register: 'low', keys: [...L123, ...R123, 'lowC', 'lowA'] },
+  // низкое A (только баритон): как низкое B♭ (левый мизинец B♭ + правый C) и клапан A большим пальцем
+  { id: 'a_3', flat: 'A3', sharp: null, sound: false, register: 'low', keys: [...L123, 'lowBb', ...R123, 'lowC', 'lowA'], hint: 'только баритон: клапан A — большим пальцем левой руки' },
   { id: 'bb3', flat: 'B♭3', sharp: 'A♯3', sound: true, register: 'low', keys: [...L123, 'lowBb', ...R123, 'lowC'] },
   { id: 'b_3', flat: 'B3', sharp: null, sound: true, register: 'low', keys: [...L123, 'lowB', ...R123, 'lowC'] },
   { id: 'c_4', flat: 'C4', sharp: null, sound: true, register: 'low', keys: [...L123, ...R123, 'lowC'] },
@@ -51,7 +52,7 @@ export const NOTES: SaxNote[] = [
   { id: 'eb4', flat: 'E♭4', sharp: 'D♯4', sound: true, register: 'low', keys: [...L123, ...R123, 'eb'] },
   { id: 'e_4', flat: 'E4', sharp: null, sound: true, register: 'low', keys: [...L123, 'r1', 'r2'] },
   { id: 'f_4', flat: 'F4', sharp: null, sound: true, register: 'low', keys: [...L123, 'r1'] },
-  { id: 'gb4', flat: 'G♭4', sharp: 'F♯4', sound: true, register: 'low', keys: [...L123, 'r2'], hint: 'вилочная аппликатура', alts: [{ name: 'с клапаном F♯', keys: [...L123, 'r1', 'fsh'] }] },
+  { id: 'gb4', flat: 'G♭4', sharp: 'F♯4', sound: true, register: 'low', keys: [...L123, 'r2'], alts: [{ name: 'с клапаном F♯', keys: [...L123, 'r1', 'fsh'] }] },
   { id: 'g_4', flat: 'G4', sharp: null, sound: true, register: 'low', keys: [...L123] },
   { id: 'ab4', flat: 'A♭4', sharp: 'G♯4', sound: true, register: 'low', keys: [...L123, 'gsh'], alts: [{ name: 'мизинец C♯', keys: [...L123, 'csh'] }, { name: 'мизинец B', keys: [...L123, 'lowB'] }, { name: 'мизинец B♭', keys: [...L123, 'lowBb'] }] },
   { id: 'a_4', flat: 'A4', sharp: null, sound: true, register: 'low', keys: ['l1', 'l2'] },
@@ -65,7 +66,7 @@ export const NOTES: SaxNote[] = [
   { id: 'eb5', flat: 'E♭5', sharp: 'D♯5', sound: true, register: 'second', keys: ['oct', ...L123, ...R123, 'eb'] },
   { id: 'e_5', flat: 'E5', sharp: null, sound: true, register: 'second', keys: ['oct', ...L123, 'r1', 'r2'] },
   { id: 'f_5', flat: 'F5', sharp: null, sound: true, register: 'second', keys: ['oct', ...L123, 'r1'] },
-  { id: 'gb5', flat: 'G♭5', sharp: 'F♯5', sound: true, register: 'second', keys: ['oct', ...L123, 'r2'], hint: 'вилочная аппликатура', alts: [{ name: 'с клапаном F♯', keys: ['oct', ...L123, 'r1', 'fsh'] }] },
+  { id: 'gb5', flat: 'G♭5', sharp: 'F♯5', sound: true, register: 'second', keys: ['oct', ...L123, 'r2'], alts: [{ name: 'с клапаном F♯', keys: ['oct', ...L123, 'r1', 'fsh'] }] },
   { id: 'g_5', flat: 'G5', sharp: null, sound: true, register: 'second', keys: ['oct', ...L123] },
   { id: 'ab5', flat: 'A♭5', sharp: 'G♯5', sound: true, register: 'second', keys: ['oct', ...L123, 'gsh'], alts: [{ name: 'мизинец C♯', keys: ['oct', ...L123, 'csh'] }, { name: 'мизинец B', keys: ['oct', ...L123, 'lowB'] }, { name: 'мизинец B♭', keys: ['oct', ...L123, 'lowBb'] }] },
   { id: 'a_5', flat: 'A5', sharp: null, sound: true, register: 'second', keys: ['oct', 'l1', 'l2'] },
@@ -126,7 +127,7 @@ export const KEY_LABELS: Record<KeyId, string> = {
   csh: 'C♯ (мизинец)',
   lowB: 'нижнее B',
   lowBb: 'нижнее B♭',
-  lowA: 'нижнее A',
+  lowA: 'нижнее A (большой палец, баритон)',
   fsh: 'клапан F♯',
   sE: 'боковое E',
   sC: 'боковое C',
