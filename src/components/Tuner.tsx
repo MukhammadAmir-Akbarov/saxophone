@@ -3,6 +3,7 @@ import { Play, RotateCcw, SkipForward, X } from 'lucide-react'
 import { NOTES, type SaxNote } from '../data/notes'
 import { midiName, playNote, stopAll, writtenMidi, type Instrument } from '../lib/sound'
 import { stopMetronome } from '../lib/metronome'
+import { stopDrone } from '../lib/drone'
 import { usePitch } from '../lib/usePitch'
 import type { STRINGS } from '../lib/i18n'
 
@@ -140,6 +141,7 @@ export default function Tuner({ onClose, instrument, sharp, note, nameOf, tab, o
   // бы «ответ» за ученика — при открытии глушим всё; при закрытии — образец.
   useEffect(() => {
     stopMetronome()
+    stopDrone()
     stopAll()
     return () => stopAll()
   }, [])

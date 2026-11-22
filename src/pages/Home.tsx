@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AudioLines, ChevronLeft, ChevronRight, CircleHelp, Download, Link2, Mic, Mic2, Timer, Volume2 } from 'lucide-react'
+import { AudioLines, CalendarCheck, ChevronLeft, ChevronRight, CircleHelp, ClipboardList, Download, Ear, Ellipsis, Link2, Mic, Mic2, Printer, Settings, Timer, Volume2 } from 'lucide-react'
 import { KEY_LABELS, NOTES, notationFile, type KeyId, type SaxNote } from '../data/notes'
 import FingeringDiagram from '../components/FingeringDiagram'
 import LegendModal from '../components/LegendModal'
@@ -7,8 +7,24 @@ import MetronomeModal from '../components/MetronomeModal'
 import Recorder from '../components/Recorder'
 import Scales from '../components/Scales'
 import Tuner, { type TunerTab } from '../components/Tuner'
+import DiaryModal from '../components/DiaryModal'
+import Melodies from '../components/Melodies'
+import PrintChart from '../components/PrintChart'
+import SelfRecord from '../components/SelfRecord'
+import SettingsModal, { type Theme } from '../components/SettingsModal'
+import TaskBuilder from '../components/TaskBuilder'
+import TaskPanel from '../components/TaskPanel'
+import Trills from '../components/Trills'
+import { MELODIES } from '../data/melodies'
+import { TRILLS } from '../data/trills'
+import { pick } from '../lib/i18n'
+import { TASK } from '../lib/i18n/task'
+import { usePracticeTracker, type Activity } from '../lib/practice'
+import { decodeTask, type Task, type TaskItem } from '../lib/task'
+import { toCyrillic } from '../lib/translit'
+import { getA4, setA4 as applyA4 } from '../lib/sound'
 import { STRINGS, altName, hintText, keyLabel, type Lang } from '../lib/i18n'
-import { onMetronomeChange, metronomeRunning } from '../lib/metronome'
+import { onMetronomeChange, metronomeOwner, metronomeRunning } from '../lib/metronome'
 import { usePersisted } from '../lib/persist'
 import { loadRecordings } from '../lib/recordings'
 import { concertMidi, midiName, playNote, stopAll, writtenMidi, type Instrument } from '../lib/sound'
@@ -21,6 +37,13 @@ const INSTRUMENTS: Instrument[] = ['soprano', 'alto', 'tenor', 'baritone']
 const URL_PARAMS = new URLSearchParams(location.search)
 const URL_NOTE = NOTES.findIndex((n) => n.id === URL_PARAMS.get('note'))
 const URL_INST = INSTRUMENTS.find((i) => i === URL_PARAMS.get('inst'))
+// задание учителя (?task=…) — недоверенный ввод из ссылки, decodeTask его проверяет
+const URL_TASK = URL_PARAMS.get('task') ? decodeTask(URL_PARAMS.get('task')!) : null
+
+type Mode = 'table' | 'quiz' | 'scales' | 'melodies' | 'trills'
+const MODES: Mode[] = ['table', 'quiz', 'scales', 'melodies', 'trills']
+// полноэкранные режимы со своей разметкой — без схемы, карточки и нижней ленты
+const FULL: Mode[] = ['scales', 'melodies', 'trills']
 
 const sameSet = (a: Set<KeyId>, b: KeyId[]) => a.size === new Set(b).size && b.every((k) => a.has(k))
 const keyStr = (k: KeyId[]) => [...k].sort().join()
@@ -92,7 +115,10 @@ export default function Home() {
   const [instrument, setInstrument] = usePersisted<Instrument>('instrument', 'alto')
   const [lang, setLang] = usePersisted<Lang>('lang', 'ru')
   const [longTone, setLongTone] = usePersisted('longTone', false)
-  const [mode, setMode] = usePersisted<'table' | 'quiz' | 'scales'>('mode', 'table')
+  const [mode, setMode] = usePersisted<Mode>('mode', 'table')
+  const [theme, setTheme] = usePersisted<Theme>('theme', 'auto')
+  const [a4, setA4State] = useState(getA4)
+  const [task, setTask] = usePersisted<Task | null>('task', null)
   const [withAltissimo, setWithAltissimo] = usePersisted('quizAltissimo', false)
   const [best, setBest] = usePersisted('quizBest', 0)
   const [quizKind, setQuizKind] = usePersisted<QuizKind>('quizKind', 'fingering')
@@ -110,6 +136,16 @@ export default function Home() {
   const [recOpen, setRecOpen] = useState(false)
   const [own, setOwn] = useState<Set<string>>(new Set())
   const [toast, setToast] = useState<string | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [diaryOpen, setDiaryOpen] = useState(false)
+  const [selfRecOpen, setSelfRecOpen] = useState(false)
+  const [printOpen, setPrintOpen] = useState(false)
+  const [builderOpen, setBuilderOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
+  // открытие из задания: какую мелодию/трель показать; key пересоздаёт экран с новыми настройками
+  const [openMelody, setOpenMelody] = useState<string | undefined>()
+  const [openTrill, setOpenTrill] = useState<string | undefined>()
+  const [screenKey, setScreenKey] = useState(0)
   const [installEvt, setInstallEvt] = useState<InstallEvent | null>(null)
   const railRef = useRef<HTMLDivElement>(null)
 
@@ -139,9 +175,64 @@ export default function Home() {
   const activeKeys = variant === 0 ? note.keys : (note.alts?.[variant - 1]?.keys ?? note.keys)
   const pressed = useMemo(() => new Set(activeKeys), [activeKeys])
   const kl = (k: KeyId) => keyLabel(k, lang, KEY_LABELS)
+  const ts = pick(TASK, lang)
+  const melodyTitle = (id: string) => {
+    const m = MELODIES.find((x) => x.id === id)
+    if (!m) return id
+    return lang === 'uzc' ? toCyrillic(m.title.uz) : m.title[lang]
+  }
+  const trillTitle = (id: string) => {
+    const tr = TRILLS.find((x) => x.id === id)
+    const n = (nid: string) => nameOf(NOTES.find((x) => x.id === nid)!)
+    return tr ? `${n(tr.from)} ⇄ ${n(tr.to)}` : id
+  }
+  const anyModal = settingsOpen || diaryOpen || selfRecOpen || printOpen || builderOpen
+  // стабильные onClose: окна вешают на них обработчик Escape в эффекте
+  const closeDiary = useCallback(() => setDiaryOpen(false), [])
+  const closeSelfRec = useCallback(() => setSelfRecOpen(false), [])
+  const closePrint = useCallback(() => setPrintOpen(false), [])
+
+  // тема: «как в системе» следит за настройкой телефона и на ходу
+  useEffect(() => {
+    const mq = matchMedia('(prefers-color-scheme: light)')
+    const apply = () => {
+      const light = theme === 'light' || (theme === 'auto' && mq.matches)
+      document.documentElement.classList.toggle('light', light)
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', light ? '#faf6ee' : '#14100a')
+    }
+    apply()
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [theme])
+
+  // задание из ссылки: сохраняем (галочки переживут перезагрузку) и раскрываем панель
+  useEffect(() => {
+    if (!URL_TASK) return
+    setTask(URL_TASK)
+    try {
+      localStorage.setItem('sax.taskCollapsed', 'false')
+    } catch {
+      /* приватный режим */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // дневник: что сейчас делает ученик (открытое окно важнее режима под ним)
+  const activity: Activity | null = tunerTab
+    ? tunerTab === 'long'
+      ? 'longTone'
+      : tunerTab === 'follow'
+        ? 'follow'
+        : 'tuner'
+    : selfRecOpen
+      ? 'selfRecord'
+      : metroOn && metronomeOwner() === 'modal'
+        ? 'metronome'
+        : mode
+  usePracticeTracker(activity)
 
   useEffect(() => {
-    document.documentElement.lang = lang
+    document.documentElement.lang = lang === 'uzc' ? 'uz-Cyrl' : lang
     document.title = t.title
   }, [lang, t.title])
 
@@ -334,7 +425,7 @@ export default function Home() {
   // клавиатура: стрелки — навигация, пробел — звук, Enter — проверить/дальше
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (legendOpen || tunerOpen || metroOpen || recOpen || mode === 'scales') return
+      if (legendOpen || tunerOpen || metroOpen || recOpen || anyModal || FULL.includes(mode)) return
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'SELECT' || tag === 'INPUT') return
       if (mode === 'table' && (e.key === 'ArrowRight' || e.key === 'ArrowUp')) {
@@ -360,7 +451,7 @@ export default function Home() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [safeIndex, select, play, legendOpen, tunerOpen, metroOpen, recOpen, mode, answered, nextQuestion, check, choiceKind, options, quizKind, hideAnswer])
+  }, [safeIndex, select, play, legendOpen, tunerOpen, metroOpen, recOpen, anyModal, mode, answered, nextQuestion, check, choiceKind, options, quizKind, hideAnswer])
 
   // прокрутка активной ноты в видимую область ленты. При первом показе — мгновенно:
   // плавная прокрутка во время загрузки страницы на телефоне обрывается на полпути.
@@ -407,6 +498,63 @@ export default function Home() {
   }
   const shownKeys = [...diagramPressed]
 
+
+  /** «Открыть» в задании учителя: переключить режим с нужными настройками */
+  const openTaskItem = (it: TaskItem) => {
+    stopAll()
+    const put = (k: string, v: unknown) => {
+      try {
+        localStorage.setItem('sax.' + k, JSON.stringify(v))
+      } catch {
+        /* приватный режим */
+      }
+    }
+    const noteIdx = (id: string) => Math.max(0, NOTES.findIndex((n) => n.id === id))
+    switch (it.k) {
+      case 'scale':
+        // экран гамм читает настройки из памяти при создании — кладём и пересоздаём его
+        put('scaleTonic', it.tonic)
+        put('scaleType', it.type)
+        put('scaleOctaves', it.octaves)
+        put('scalePattern', it.pattern ?? 'plain')
+        setBpm(it.bpm)
+        setMode('scales')
+        setScreenKey((k) => k + 1)
+        break
+      case 'long':
+        setIndex(noteIdx(it.note))
+        setMode('table')
+        setTunerTab('long')
+        break
+      case 'quiz':
+        setMode('quiz')
+        setQuizKind(it.kind)
+        nextQuestion(it.kind)
+        break
+      case 'melody':
+        setOpenMelody(it.id)
+        setMode('melodies')
+        setScreenKey((k) => k + 1)
+        break
+      case 'trill':
+        setOpenTrill(it.id)
+        setMode('trills')
+        setScreenKey((k) => k + 1)
+        break
+      case 'metro':
+        setBpm(it.bpm)
+        setBeats(it.beats)
+        setMetroOpen(true)
+        break
+      case 'note':
+        setIndex(noteIdx(it.note))
+        setMode('table')
+        setVariant(0)
+        break
+    }
+    window.scrollTo({ top: 0 })
+  }
+
   return (
     <div className="flex min-h-dvh flex-col bg-[#14100a] text-[#f0e6d2]">
       {/* шапка */}
@@ -433,8 +581,8 @@ export default function Home() {
                 <span className="hidden sm:inline">{t.install}</span>
               </button>
             )}
-            <button onClick={() => setLang(lang === 'ru' ? 'uz' : 'ru')} aria-label={t.langToggle} className={BTN}>
-              {lang === 'ru' ? 'UZ' : 'RU'}
+            <button onClick={() => setSettingsOpen(true)} aria-label={t.settings} title={t.settings} className={`${BTN} px-0`}>
+              <Settings size={20} />
             </button>
             <button onClick={() => setLegendOpen(true)} aria-label={t.help} className={`${BTN} px-0`}>
               <CircleHelp size={22} />
@@ -444,8 +592,8 @@ export default function Home() {
 
         {/* панель режимов и настроек */}
         <div className="mx-auto mt-3 flex max-w-5xl flex-wrap items-center gap-2">
-          <div className="flex rounded-xl border border-[#4a3b22] p-0.5" role="tablist">
-            {(['table', 'quiz', 'scales'] as const).map((m) => (
+          <div className="flex max-w-full overflow-x-auto rounded-xl border border-[#4a3b22] p-0.5" role="tablist">
+            {MODES.map((m) => (
               <button
                 key={m}
                 role="tab"
@@ -456,11 +604,11 @@ export default function Home() {
                   setVariant(0)
                   if (m === 'quiz' && mode !== 'quiz') nextQuestion()
                 }}
-                className={`h-10 cursor-pointer rounded-[10px] px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[#f2c14e] ${
+                className={`h-10 shrink-0 cursor-pointer rounded-[10px] px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[#f2c14e] ${
                   mode === m ? BTN_ON : 'text-[#c9b892] hover:text-[#f2c14e]'
                 }`}
               >
-                {m === 'table' ? t.modeTable : m === 'quiz' ? t.modeQuiz : t.modeScales}
+                {{ table: t.modeTable, quiz: t.modeQuiz, scales: t.modeScales, melodies: t.modeMelodies, trills: t.modeTrills }[m]}
               </button>
             ))}
           </div>
@@ -509,16 +657,71 @@ export default function Home() {
             <Timer size={18} />
             <span className="hidden sm:inline">{t.metronome}</span>
           </button>
-          <button onClick={() => setRecOpen(true)} className={BTN} title={t.recTitle} aria-label={t.recTitle}>
-            <Mic2 size={18} />
-            <span className="hidden sm:inline">{t.record}</span>
+          <button onClick={() => setSelfRecOpen(true)} className={BTN} title={t.selfRecord} aria-label={t.selfRecord}>
+            <Ear size={18} />
+            <span className="hidden sm:inline">{t.selfRecord}</span>
           </button>
+          <button onClick={() => setDiaryOpen(true)} className={BTN} title={t.diary} aria-label={t.diary}>
+            <CalendarCheck size={18} />
+            <span className="hidden sm:inline">{t.diary}</span>
+          </button>
+          {/* редкие действия — в меню, чтобы панель не разрасталась на телефоне */}
+          <div className="relative">
+            <button onClick={() => setMoreOpen((v) => !v)} aria-expanded={moreOpen} aria-haspopup="menu" className={BTN} title={t.more} aria-label={t.more}>
+              <Ellipsis size={18} />
+            </button>
+            {moreOpen && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setMoreOpen(false)} aria-hidden="true" />
+                <div role="menu" className="absolute right-0 z-40 mt-1 w-56 rounded-xl border border-[#3a2f1c] bg-[#1c1610] p-1 shadow-2xl">
+                  {(
+                    [
+                      [Mic2, t.recTitle, () => setRecOpen(true)],
+                      [ClipboardList, ts.builderOpen, () => setBuilderOpen(true)],
+                      [Printer, t.printChart, () => setPrintOpen(true)],
+                    ] as const
+                  ).map(([Icon, label, act]) => (
+                    <button
+                      key={label}
+                      role="menuitem"
+                      onClick={() => {
+                        setMoreOpen(false)
+                        act()
+                      }}
+                      className="flex h-11 w-full cursor-pointer items-center gap-2 rounded-lg px-3 text-left text-sm font-semibold text-[#e8d5ae] hover:bg-[#241c11] hover:text-[#f2c14e] focus-visible:outline-2 focus-visible:outline-[#f2c14e]"
+                    >
+                      <Icon size={18} /> {label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
+        {task && (
+          <div className="mx-auto mt-3 max-w-5xl">
+            <TaskPanel
+              task={task}
+              lang={lang}
+              t={t}
+              nameOf={nameOf}
+              onToggle={(i) => setTask({ ...task, items: task.items.map((x, j) => (j === i ? { ...x, done: !x.done } : x)) })}
+              onOpen={openTaskItem}
+              onClose={() => setTask(null)}
+              melodyTitle={melodyTitle}
+              trillTitle={trillTitle}
+            />
+          </div>
+        )}
       </header>
 
       {/* основная часть */}
       {mode === 'scales' ? (
-        <Scales instrument={instrument} lang={lang} bpm={bpm} setBpm={setBpm} t={t} />
+        <Scales key={screenKey} instrument={instrument} lang={lang} bpm={bpm} setBpm={setBpm} t={t} />
+      ) : mode === 'melodies' ? (
+        <Melodies key={screenKey} instrument={instrument} lang={lang} t={t} bpm={bpm} setBpm={setBpm} sharp={sharpMode} initialMelodyId={openMelody} />
+      ) : mode === 'trills' ? (
+        <Trills key={screenKey} instrument={instrument} lang={lang} t={t} sharp={sharpMode} initialId={openTrill} />
       ) : (
       <main className="mx-auto grid w-full max-w-5xl flex-1 grid-cols-1 items-start gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[1fr_340px]">
         {/* схема клапанов */}
@@ -756,7 +959,7 @@ export default function Home() {
       )}
 
       {/* нижняя панель: лента нот в таблице, счёт в тренажёре (лента выдала бы ответ) */}
-      {mode !== 'scales' && (
+      {!FULL.includes(mode) && (
       <footer className="sticky bottom-0 border-t border-[#2e2415] bg-[#14100a]/95 backdrop-blur-sm">
         {mode === 'table' ? (
           <div ref={railRef} className="mx-auto flex max-w-5xl items-center gap-1.5 overflow-x-auto px-4 py-3 sm:px-6">
@@ -840,6 +1043,36 @@ export default function Home() {
       )}
       {metroOpen && (
         <MetronomeModal onClose={() => setMetroOpen(false)} bpm={bpm} setBpm={setBpm} beats={beats} setBeats={setBeats} t={t} />
+      )}
+      {settingsOpen && (
+        <SettingsModal
+          onClose={() => setSettingsOpen(false)}
+          lang={lang}
+          setLang={setLang}
+          theme={theme}
+          setTheme={setTheme}
+          a4={a4}
+          setA4={(v) => {
+            applyA4(v)
+            setA4State(v)
+          }}
+          t={t}
+        />
+      )}
+      {diaryOpen && <DiaryModal onClose={closeDiary} lang={lang} t={t} nameOf={nameOf} />}
+      {selfRecOpen && <SelfRecord onClose={closeSelfRec} instrument={instrument} sharp={sharpMode} lang={lang} t={t} />}
+      {printOpen && <PrintChart onClose={closePrint} lang={lang} t={t} nameOf={nameOf} instrument={instrument} />}
+      {builderOpen && (
+        <TaskBuilder
+          onClose={() => setBuilderOpen(false)}
+          lang={lang}
+          t={t}
+          instrument={instrument}
+          nameOf={nameOf}
+          currentNoteId={NOTES[safeIndex].id}
+          melodies={MELODIES.map((m) => ({ id: m.id, title: melodyTitle(m.id) }))}
+          trills={TRILLS.map((tr) => ({ id: tr.id, title: trillTitle(tr.id) }))}
+        />
       )}
       {recOpen && (
         <Recorder

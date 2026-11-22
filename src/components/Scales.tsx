@@ -5,7 +5,8 @@ import FingeringDiagram from './FingeringDiagram'
 import { keyLabel, type Lang, type STRINGS } from '../lib/i18n'
 import { clampBpm, onMetronomeChange, startMetronome, stopMetronome } from '../lib/metronome'
 import { usePersisted } from '../lib/persist'
-import { SCALE_TYPES, buildScale, keyIsSharp, tonicName, type ScaleType } from '../lib/scales'
+import { PATTERNS, SCALE_TYPES, buildScale, keyIsSharp, tonicName, type Pattern, type ScaleType } from '../lib/scales'
+import { onDroneChange, startDrone, stopDrone } from '../lib/drone'
 import { TRANSPOSE, concertMidi, midiName, playNote, stopAll, type Instrument } from '../lib/sound'
 
 interface Props {
@@ -30,13 +31,26 @@ export default function Scales({ instrument, lang, bpm, setBpm, t }: Props) {
   const [type, setType] = usePersisted<ScaleType>('scaleType', 'major')
   const [octaves, setOctaves] = usePersisted<1 | 2>('scaleOctaves', 1)
   const [clicks, setClicks] = usePersisted('scaleClicks', true)
+  const [pattern, setPattern] = usePersisted<Pattern>('scalePattern', 'plain')
+  const [droneFifth, setDroneFifth] = usePersisted('droneFifth', false)
+  // бурдон не запоминаем между заходами: внезапный гул при открытии экрана пугает
+  const [drone, setDrone] = useState(false)
   const [pos, setPos] = useState(0)
   const [playing, setPlaying] = useState(false)
   // идёт отсчёт: сколько долей осталось до первой ноты
   const [countIn, setCountIn] = useState(0)
   const chipsRef = useRef<HTMLDivElement>(null)
 
-  const seq = useMemo(() => buildScale(tonic, type, octaves), [tonic, type, octaves])
+  const seq = useMemo(() => buildScale(tonic, type, octaves, pattern), [tonic, type, octaves, pattern])
+  // бурдон на звучащей тонике выбранного строя (у альта письменная C звучит как E♭)
+  const droneMidi = concertMidi(NOTES[seq[0].index].id, instrument)
+  useEffect(() => {
+    if (!drone) return
+    startDrone(droneFifth ? [droneMidi, droneMidi + 7] : [droneMidi])
+    return () => stopDrone()
+  }, [drone, droneMidi, droneFifth])
+  // тюнер глушит бурдон (иначе микрофон слушал бы его) — кнопка должна погаснуть
+  useEffect(() => onDroneChange((on) => !on && setDrone(false)), [])
   const cur = seq[Math.min(pos, seq.length - 1)]
   const note = NOTES[cur.index]
   const name = (k: number) => {
@@ -120,6 +134,14 @@ export default function Scales({ instrument, lang, bpm, setBpm, t }: Props) {
     sound(c)
   }
 
+  const patternLabel: Record<Pattern, string> = {
+    plain: t.patPlain,
+    thirds: t.patThirds,
+    fourths: t.patFourths,
+    groups3: t.patGroups3,
+    groups4: t.patGroups4,
+    triads: t.patTriads,
+  }
   const typeLabel: Record<ScaleType, string> = {
     major: t.major,
     minor: t.minor,
@@ -153,6 +175,16 @@ export default function Scales({ instrument, lang, bpm, setBpm, t }: Props) {
             </option>
           ))}
         </select>
+        <label className="sr-only" htmlFor="scalePattern">
+          {t.patternLabel}
+        </label>
+        <select id="scalePattern" value={pattern} onChange={(e) => change(setPattern)(e.target.value as Pattern)} className={SEL}>
+          {PATTERNS.map((p) => (
+            <option key={p} value={p}>
+              {patternLabel[p]}
+            </option>
+          ))}
+        </select>
         <div className="flex rounded-xl border border-[#4a3b22] p-0.5" role="group" aria-label={t.octaves}>
           {([1, 2] as const).map((o) => (
             <button
@@ -180,6 +212,15 @@ export default function Scales({ instrument, lang, bpm, setBpm, t }: Props) {
           <input type="checkbox" checked={clicks} onChange={(e) => setClicks(e.target.checked)} disabled={playing} className="h-4 w-4 accent-[#d9a441]" />
           {t.clicks}
         </label>
+        <button onClick={() => setDrone((d) => !d)} aria-pressed={drone} className={drone ? `${BTN} border-transparent ${ON}` : BTN} title={t.droneHint}>
+          {t.drone}
+        </button>
+        {drone && (
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-[#c9b892]">
+            <input type="checkbox" checked={droneFifth} onChange={(e) => setDroneFifth(e.target.checked)} className="h-4 w-4 accent-[#d9a441]" />
+            {t.droneFifth}
+          </label>
+        )}
       </div>
 
       {/* лента нот гаммы */}

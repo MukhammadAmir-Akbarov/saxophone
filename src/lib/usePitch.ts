@@ -8,12 +8,21 @@ import { TRANSPOSE, detectPitch, freqToMidi, type Instrument } from './sound'
  * onFrame получает письменную высоту (дробный MIDI) или null, если тихо.
  * muteUntil(ms) — не слушать до момента performance.now(): пока звучит образец
  * из динамика, микрофон слышит его, а не ученика.
+ * onStream(s) — вызывается один раз, когда поток микрофона получен: запись себя
+ * берёт ТОТ ЖЕ поток (второй getUserMedia — второй запрос разрешения на iOS).
+ * Поток принадлежит хуку: останавливать его дорожки снаружи нельзя.
  */
-export function usePitch(instrument: Instrument, onFrame: (written: number | null, now: number) => void) {
+export function usePitch(
+  instrument: Instrument,
+  onFrame: (written: number | null, now: number) => void,
+  onStream?: (s: MediaStream) => void,
+) {
   const [denied, setDenied] = useState(false)
   const cb = useRef(onFrame)
+  const streamCb = useRef(onStream)
   useLayoutEffect(() => {
     cb.current = onFrame
+    streamCb.current = onStream
   })
   const mutedTill = useRef(0)
 
@@ -35,6 +44,7 @@ export function usePitch(instrument: Instrument, onFrame: (written: number | nul
         return
       }
       if (!alive) return stream.getTracks().forEach((tr) => tr.stop())
+      streamCb.current?.(stream)
       ac = new AudioContext()
       // после await жест пользователя «истёк» — контекст может родиться спящим
       await ac.resume().catch(() => {})

@@ -1,0 +1,33 @@
+// Подписи окна «Печать таблицы аппликатур». ru — источник, uz — латиница.
+export const PRINT = {
+  ru: {
+    title: 'Печать таблицы аппликатур',
+    sheetTitle: 'Аппликатуры саксофона',
+    registers: 'Какие октавы',
+    showAlts: 'Альтернативные аппликатуры',
+    showStaff: 'Нотный стан',
+    columns: 'Колонок на странице',
+    preview: 'Так будет выглядеть лист (первые ноты)',
+    count: 'Нот в таблице:',
+    print: 'Печать / PDF',
+    preparing: 'Готовим…',
+    pdfHint: 'Чтобы получить PDF, выберите в окне печати «Сохранить как PDF».',
+    empty: 'Отметьте хотя бы одну октаву.',
+    alts: 'Ещё:',
+  },
+  uz: {
+    title: 'Applikaturalar jadvalini chop etish',
+    sheetTitle: 'Saksofon applikaturalari',
+    registers: 'Qaysi oktavalar',
+    showAlts: 'Muqobil applikaturalar',
+    showStaff: 'Nota yo‘li',
+    columns: 'Sahifadagi ustunlar',
+    preview: 'Varaq shunday ko‘rinadi (birinchi notalar)',
+    count: 'Jadvaldagi notalar:',
+    print: 'Chop etish / PDF',
+    preparing: 'Tayyorlanmoqda…',
+    pdfHint: 'PDF olish uchun chop etish oynasida «PDF sifatida saqlash»ni tanlang.',
+    empty: 'Kamida bitta oktavani belgilang.',
+    alts: 'Yana:',
+  },
+}

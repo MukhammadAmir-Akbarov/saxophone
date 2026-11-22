@@ -38,8 +38,28 @@ export function midiName(midi: number, sharp = false): string {
   return (sharp ? SHARP_NAMES : FLAT_NAMES)[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1)
 }
 
-export const midiToFreq = (m: number) => 440 * 2 ** ((m - 69) / 12)
-export const freqToMidi = (f: number) => 69 + 12 * Math.log2(f / 440)
+// Строй ансамбля: оркестры часто строят по A = 442–443 Гц. От него считают и тюнер,
+// и синтез. Читаем при загрузке модуля — до первого звука и первого замера.
+let A4 = (() => {
+  try {
+    const v = Number(JSON.parse(localStorage.getItem('sax.a4') ?? '440'))
+    return v >= 415 && v <= 466 ? v : 440
+  } catch {
+    return 440
+  }
+})()
+export const getA4 = () => A4
+export function setA4(v: number) {
+  A4 = v
+  try {
+    localStorage.setItem('sax.a4', JSON.stringify(v))
+  } catch {
+    /* приватный режим */
+  }
+}
+
+export const midiToFreq = (m: number) => A4 * 2 ** ((m - 69) / 12)
+export const freqToMidi = (f: number) => 69 + 12 * Math.log2(f / A4)
 
 // ── проигрывание ─────────────────────────────────────────────────────────
 
@@ -155,7 +175,8 @@ export function playNote(id: string, hasRecording: boolean, inst: Instrument, op
     // ponytail: сдвиг скорости меняет и тембр/длину; для тенора/баритона честнее
     // отдельные записи (режим «Запись»)
     a.preservesPitch = false
-    a.playbackRate = 2 ** ((TRANSPOSE[inst] - TRANSPOSE[mine ? mine.instrument : RECORDED_ON]) / 12)
+    // записи сделаны при A = 440: под строй ансамбля чуть ускоряем/замедляем
+    a.playbackRate = 2 ** ((TRANSPOSE[inst] - TRANSPOSE[mine ? mine.instrument : RECORDED_ON]) / 12) * (A4 / 440)
     a.onended = end
     a.onerror = end
     void a.play().catch(end)
