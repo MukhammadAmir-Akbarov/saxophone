@@ -123,7 +123,10 @@ export default function ClassModal({ onClose, lang, t, nameOf, highlightId }: Pr
   }, [onClose])
 
   // в большом классе новичок может оказаться ниже края окна
-  useEffect(() => hiRef.current?.scrollIntoView({ block: 'nearest' }), [])
+  // тело в фигурных скобках: эффект не должен ничего возвращать, кроме функции очистки
+  useEffect(() => {
+    hiRef.current?.scrollIntoView({ block: 'nearest' })
+  }, [])
 
   const weakNames = (r: StudentReport) =>
     r.weak

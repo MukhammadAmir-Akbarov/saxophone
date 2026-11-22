@@ -186,7 +186,9 @@ function Result({ s, game, unit, value, newBest, onAgain, onMenu }: { s: S; game
   const stars = starsFor(game, value)
   const again = useRef<HTMLButtonElement>(null)
   // фокус на «Ещё раз»: с клавиатуры продолжить можно сразу, экранный диктор прочтёт итог
-  useEffect(() => again.current?.focus(), [])
+  useEffect(() => {
+    again.current?.focus()
+  }, [])
   return (
     <section className="relative flex flex-col items-center gap-4 overflow-hidden rounded-2xl border border-[var(--c-2e2415)] bg-[var(--c-1a1509)] px-4 py-8 text-center" aria-live="polite">
       {stars > 0 && (
