@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { Copy, Send, Share2, X } from 'lucide-react'
+import { Copy, Link2, Send, Share2, X } from 'lucide-react'
 import { NOTES, type SaxNote } from '../data/notes'
 import { pick, type Lang, type STRINGS } from '../lib/i18n'
 import { DIARY } from '../lib/i18n/diary'
 import { usePersisted } from '../lib/persist'
+import { buildReport as buildStudentReport, reportUrl } from '../lib/report'
 import { DIARY_EVENT, dayKey, daySeconds, readDiary, streakDays, weekDays, type Activity, type Diary } from '../lib/practice'
 
 interface Props {
@@ -188,7 +189,9 @@ export default function DiaryModal({ onClose, lang, t, nameOf }: Props) {
   const [goal, setGoal] = usePersisted('goalMin', 20)
   const [diary, setDiary] = useState<Diary>(readDiary)
   const [report, setReport] = useState<string | null>(null)
-  const [status, setStatus] = useState<'' | 'copied' | 'failed'>('')
+  const [status, setStatus] = useState<'' | 'copied' | 'failed' | 'needName'>('')
+  // имя для учителя — ключ 'sax.studentName', его же читает lib/report.ts
+  const [studentName, setStudentName] = usePersisted('studentName', '')
   const closeRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -232,9 +235,36 @@ export default function DiaryModal({ onClose, lang, t, nameOf }: Props) {
       /* пользователь закрыл системное меню — это не ошибка */
     }
   }
-  const copy = async () => {
+  // ссылка-отчёт для «Моего класса» учителя; без имени учитель не поймёт, чей отчёт
+  const linkOrHint = () => {
+    if (!studentName.trim()) {
+      setStatus('needName')
+      return null
+    }
+    setStatus('')
+    return reportUrl(buildStudentReport(studentName))
+  }
+  const sendLink = () => {
+    const url = linkOrHint()
+    // window.open — синхронно в обработчике клика, иначе браузер заблокирует всплывающее окно
+    if (url) window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(s.linkText)}`, '_blank', 'noopener')
+  }
+  const shareLink = async () => {
+    const url = linkOrHint()
+    if (!url) return
     try {
-      await navigator.clipboard.writeText(report ?? '')
+      await navigator.share({ url, text: s.linkText })
+    } catch {
+      /* закрыли системное меню */
+    }
+  }
+  const copyLink = () => {
+    const url = linkOrHint()
+    if (url) void copy(url)
+  }
+  const copy = async (text: string = report ?? '') => {
+    try {
+      await navigator.clipboard.writeText(text)
       setStatus('copied')
     } catch {
       // нет HTTPS или запрещён буфер — пусть выделит текст в превью сам
@@ -319,11 +349,44 @@ export default function DiaryModal({ onClose, lang, t, nameOf }: Props) {
           </>
         ) : (
           <>
-            <pre className="max-h-[50dvh] overflow-auto whitespace-pre-wrap rounded-xl border border-[var(--c-2e2415)] bg-[var(--c-14100a)] p-3 font-sans text-sm text-[var(--c-e8d5ae)] select-text">
+            <label className="block text-sm text-[var(--c-c9b892)]" htmlFor="student-name">
+              {s.studentName}
+            </label>
+            <input
+              id="student-name"
+              value={studentName}
+              maxLength={40}
+              autoComplete="name"
+              placeholder={s.namePh}
+              aria-invalid={status === 'needName'}
+              onChange={(e) => {
+                setStudentName(e.target.value)
+                if (status === 'needName') setStatus('')
+              }}
+              className={`mt-1 h-11 w-full rounded-xl border bg-[var(--c-14100a)] px-3 text-[var(--c-f5e8cd)] placeholder:text-[var(--c-7a6845)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] ${status === 'needName' ? 'border-[var(--c-ff8a78)]' : 'border-[var(--c-2e2415)]'}`}
+            />
+            {status === 'needName' && <p className="mt-1 text-sm text-[var(--c-ff8a78)]">{s.needName}</p>}
+            <button onClick={sendLink} className={`${BTN} mt-3 w-full border-transparent ${ON} hover:text-[var(--c-241a08)]`}>
+              <Link2 size={18} /> {s.sendLink}
+            </button>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {typeof navigator.share === 'function' && (
+                <button onClick={shareLink} className={BTN}>
+                  <Share2 size={18} /> {s.shareLink}
+                </button>
+              )}
+              <button onClick={copyLink} className={`${BTN} ${typeof navigator.share === 'function' ? '' : 'col-span-2'}`}>
+                <Copy size={18} /> {s.copyLink}
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-[var(--c-7a6845)]">{s.linkHint}</p>
+
+            <div className="mt-4 text-sm text-[var(--c-c9b892)]">{s.asText}</div>
+            <pre className="mt-1 max-h-[40dvh] overflow-auto whitespace-pre-wrap rounded-xl border border-[var(--c-2e2415)] bg-[var(--c-14100a)] p-3 font-sans text-sm text-[var(--c-e8d5ae)] select-text">
               {report}
             </pre>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <button onClick={sendTelegram} className={`${BTN} col-span-2 border-transparent ${ON} hover:text-[var(--c-241a08)]`}>
+              <button onClick={sendTelegram} className={`${BTN} col-span-2`}>
                 <Send size={18} /> {s.sendTelegram}
               </button>
               {typeof navigator.share === 'function' && (
@@ -331,7 +394,7 @@ export default function DiaryModal({ onClose, lang, t, nameOf }: Props) {
                   <Share2 size={18} /> {s.share}
                 </button>
               )}
-              <button onClick={copy} className={BTN}>
+              <button onClick={() => copy()} className={BTN}>
                 <Copy size={18} /> {s.copy}
               </button>
               <button onClick={() => setReport(null)} className={`${BTN} col-span-2`}>

@@ -220,6 +220,11 @@ const RU = {
   selfRecord: 'Слушать себя',
   modeMelodies: 'Мелодии',
   modeTrills: 'Трели',
+  modeEnsemble: 'Ансамбль',
+  modeGames: 'Игры',
+  myClass: 'Мой класс',
+  classAdded: 'В классе новый ученик: {1}',
+  classUpdated: 'Отчёт обновлён: {1}',
   more: 'Ещё',
 }
 
@@ -417,6 +422,11 @@ const UZ: Dict = {
   selfRecord: 'O‘zingizni tinglang',
   modeMelodies: 'Kuylar',
   modeTrills: 'Trellar',
+  modeEnsemble: 'Ansambl',
+  modeGames: 'O‘yinlar',
+  myClass: 'Mening sinfim',
+  classAdded: 'Sinfda yangi o‘quvchi: {1}',
+  classUpdated: 'Hisobot yangilandi: {1}',
   more: 'Yana',
 }
 
@@ -612,6 +622,11 @@ const EN: Dict = {
   selfRecord: 'Listen to yourself',
   modeMelodies: 'Melodies',
   modeTrills: 'Trills',
+  modeEnsemble: 'Ensemble',
+  modeGames: 'Games',
+  myClass: 'My class',
+  classAdded: 'New student in your class: {1}',
+  classUpdated: 'Report updated: {1}',
   more: 'More',
 }
 export const STRINGS: Record<Lang, Dict> = { ru: RU, uz: UZ, uzc: cyrDict(UZ), en: EN }

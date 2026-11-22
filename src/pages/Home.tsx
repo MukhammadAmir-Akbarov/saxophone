@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AudioLines, BookOpen, CalendarCheck, ChevronLeft, ChevronRight, CircleHelp, ClipboardList, Download, Ear, Ellipsis, Link2, Mic, Mic2, Printer, Settings, Timer, Volume2 } from 'lucide-react'
+import { AudioLines, BookOpen, GraduationCap, CalendarCheck, ChevronLeft, ChevronRight, CircleHelp, ClipboardList, Download, Ear, Ellipsis, Link2, Mic, Mic2, Printer, Settings, Timer, Volume2 } from 'lucide-react'
 import { KEY_LABELS, NOTES, notationFile, type KeyId, type SaxNote } from '../data/notes'
 import FingeringDiagram from '../components/FingeringDiagram'
 import LegendModal from '../components/LegendModal'
@@ -15,6 +15,10 @@ import SettingsModal, { type Theme } from '../components/SettingsModal'
 import TaskBuilder from '../components/TaskBuilder'
 import TaskPanel from '../components/TaskPanel'
 import Trills from '../components/Trills'
+import Ensemble from '../components/Ensemble'
+import Games from '../components/Games'
+import ClassModal from '../components/ClassModal'
+import { ingestReportFromUrl } from '../lib/report'
 import ProgramsModal from '../components/ProgramsModal'
 import Tour from '../components/Tour'
 import { TOUR, tourSteps } from '../lib/i18n/tour'
@@ -44,13 +48,16 @@ const URL_NOTE = NOTES.findIndex((n) => n.id === URL_PARAMS.get('note'))
 const URL_INST = INSTRUMENTS.find((i) => i === URL_PARAMS.get('inst'))
 // задание учителя (?task=…) — недоверенный ввод из ссылки, decodeTask его проверяет
 const URL_TASK = URL_PARAMS.get('task') ? decodeTask(URL_PARAMS.get('task')!) : null
+// Отчёт ученика (?report=…) разбираем сразу при загрузке модуля: эффект синхронизации
+// адреса с нотой сработал бы раньше и стёр параметр до того, как мы его прочитали.
+const INGESTED = ingestReportFromUrl()
 // своя мелодия учителя по ссылке (?melody=…) — тоже недоверенный ввод, decodeMelody проверяет
 const URL_MELODY = URL_PARAMS.get('melody') ? (decodeMelody(URL_PARAMS.get('melody')!) ?? undefined) : undefined
 
-type Mode = 'table' | 'quiz' | 'scales' | 'melodies' | 'trills'
-const MODES: Mode[] = ['table', 'quiz', 'scales', 'melodies', 'trills']
+type Mode = 'table' | 'quiz' | 'scales' | 'melodies' | 'trills' | 'ensemble' | 'games'
+const MODES: Mode[] = ['table', 'quiz', 'scales', 'melodies', 'trills', 'ensemble', 'games']
 // полноэкранные режимы со своей разметкой — без схемы, карточки и нижней ленты
-const FULL: Mode[] = ['scales', 'melodies', 'trills']
+const FULL: Mode[] = ['scales', 'melodies', 'trills', 'ensemble', 'games']
 
 const sameSet = (a: Set<KeyId>, b: KeyId[]) => a.size === new Set(b).size && b.every((k) => a.has(k))
 const keyStr = (k: KeyId[]) => [...k].sort().join()
@@ -149,6 +156,8 @@ export default function Home() {
   const [printOpen, setPrintOpen] = useState(false)
   const [builderOpen, setBuilderOpen] = useState(false)
   const [programsOpen, setProgramsOpen] = useState(false)
+  const [classOpen, setClassOpen] = useState(false)
+  const [classHi, setClassHi] = useState<string | undefined>()
   // текущая программа занятий: какая и на какой неделе (с нуля)
   const [program, setProgram] = usePersisted<{ programId: string; week: number } | null>('program', null)
   // подсказки первого входа: один раз; повтор — из Настроек.
@@ -207,7 +216,7 @@ export default function Home() {
     const n = (nid: string) => nameOf(NOTES.find((x) => x.id === nid)!)
     return tr ? `${n(tr.from)} ⇄ ${n(tr.to)}` : id
   }
-  const anyModal = settingsOpen || diaryOpen || selfRecOpen || printOpen || builderOpen || programsOpen || !tourDone
+  const anyModal = settingsOpen || diaryOpen || selfRecOpen || printOpen || builderOpen || programsOpen || classOpen || !tourDone
   // стабильные onClose: окна вешают на них обработчик Escape в эффекте
   const closeDiary = useCallback(() => setDiaryOpen(false), [])
   const closeSelfRec = useCallback(() => setSelfRecOpen(false), [])
@@ -225,6 +234,17 @@ export default function Home() {
     mq.addEventListener('change', apply)
     return () => mq.removeEventListener('change', apply)
   }, [theme])
+
+  // отчёт ученика по ссылке (?report=…): учитель открыл — ученик в «Моём классе»
+  useEffect(() => {
+    const res = INGESTED
+    if (!res) return
+    setToast((res.added ? t.classAdded : t.classUpdated).replace('{1}', res.name))
+    setClassHi(res.id)
+    setClassOpen(true)
+    setTourDone(true) // учителю с отчётом подсказки новичка ни к чему
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // мелодия из ссылки — сразу на экран мелодий
   useEffect(() => {
@@ -645,7 +665,7 @@ export default function Home() {
                   mode === m ? BTN_ON : 'text-[var(--c-c9b892)] hover:text-[var(--c-f2c14e)]'
                 }`}
               >
-                {{ table: t.modeTable, quiz: t.modeQuiz, scales: t.modeScales, melodies: t.modeMelodies, trills: t.modeTrills }[m]}
+                {{ table: t.modeTable, quiz: t.modeQuiz, scales: t.modeScales, melodies: t.modeMelodies, trills: t.modeTrills, ensemble: t.modeEnsemble, games: t.modeGames }[m]}
               </button>
             ))}
           </div>
@@ -727,6 +747,7 @@ export default function Home() {
                       [Mic2, t.recTitle, () => setRecOpen(true)],
                       [ClipboardList, ts.builderOpen, () => setBuilderOpen(true)],
                       [BookOpen, tp.title, () => setProgramsOpen(true)],
+                      [GraduationCap, t.myClass, () => setClassOpen(true)],
                       [Printer, t.printChart, () => setPrintOpen(true)],
                     ] as const
                   ).map(([Icon, label, act]) => (
@@ -769,6 +790,10 @@ export default function Home() {
         <Scales key={screenKey} instrument={instrument} lang={lang} bpm={bpm} setBpm={setBpm} a4={a4} t={t} />
       ) : mode === 'melodies' ? (
         <Melodies key={screenKey} instrument={instrument} lang={lang} t={t} bpm={bpm} setBpm={setBpm} sharp={sharpMode} initialMelodyId={openMelody} shared={sharedMelody} />
+      ) : mode === 'ensemble' ? (
+        <Ensemble key={screenKey} instrument={instrument} lang={lang} t={t} bpm={bpm} setBpm={setBpm} sharp={sharpMode} />
+      ) : mode === 'games' ? (
+        <Games key={screenKey} instrument={instrument} lang={lang} t={t} sharp={sharpMode} nameOf={nameOf} />
       ) : mode === 'trills' ? (
         <Trills key={screenKey} instrument={instrument} lang={lang} t={t} sharp={sharpMode} initialId={openTrill} />
       ) : (
@@ -1117,6 +1142,7 @@ export default function Home() {
       {diaryOpen && <DiaryModal onClose={closeDiary} lang={lang} t={t} nameOf={nameOf} />}
       {selfRecOpen && <SelfRecord onClose={closeSelfRec} instrument={instrument} sharp={sharpMode} lang={lang} t={t} />}
       {printOpen && <PrintChart onClose={closePrint} lang={lang} t={t} nameOf={nameOf} instrument={instrument} />}
+      {classOpen && <ClassModal onClose={() => setClassOpen(false)} lang={lang} t={t} nameOf={nameOf} highlightId={classHi} />}
       {programsOpen && (
         <ProgramsModal
           onClose={() => setProgramsOpen(false)}

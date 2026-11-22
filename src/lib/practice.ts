@@ -8,6 +8,8 @@ export type Activity =
   | 'table'
   | 'quiz'
   | 'scales'
+  | 'ensemble'
+  | 'games'
   | 'melodies'
   | 'trills'
   | 'tuner'
