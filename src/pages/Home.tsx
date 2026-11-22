@@ -694,7 +694,7 @@ export default function Home() {
             onClick={() => setSharpMode((v) => !v)}
             aria-pressed={sharpMode}
             aria-label={t.sharpToggle}
-            className={`${BTN} text-lg`}
+            className={`${BTN} text-2xl leading-none`}
           >
             {sharpMode ? '♯' : '♭'}
           </button>

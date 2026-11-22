@@ -99,6 +99,9 @@ export default function SettingsModal({ onClose, lang, setLang, theme, setTheme,
         >
           {replayLabel}
         </button>
+        <a href="privacy.html" target="_blank" rel="noopener" className="mt-3 block text-center text-xs text-[var(--c-a08c64)] underline-offset-2 hover:text-[var(--c-f2c14e)] hover:underline">
+          {t.privacy}
+        </a>
       </div>
     </div>
   )
