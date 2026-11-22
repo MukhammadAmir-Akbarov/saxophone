@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# сборки Android
+Saxophone-*.apk
+Saxophone-*.aab

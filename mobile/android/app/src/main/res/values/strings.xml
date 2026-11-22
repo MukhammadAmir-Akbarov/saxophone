@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Саксофон</string>
+    <string name="title_activity_main">Саксофон</string>
+    <string name="package_name">uz.saxophone.fingerings</string>
+    <string name="custom_url_scheme">uz.saxophone.fingerings</string>
+</resources>

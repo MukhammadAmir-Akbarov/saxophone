@@ -1,0 +1,10 @@
+{
+  "name": "saxophone-mobile",
+  "private": true,
+  "description": "Android-оболочка (Capacitor) для веб-приложения: тот же сайт из dist/, но как приложение из магазина",
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0"
+  }
+}
