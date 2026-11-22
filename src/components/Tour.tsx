@@ -131,11 +131,22 @@ export default function Tour({ steps, onDone, lang, t }: Props) {
   }, [measure])
 
   useEffect(() => {
+    // фокус не уходит под затемнение: Tab ходит только по кнопкам карточки
+    const prev = document.activeElement as HTMLElement | null
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onDone()
+      if (e.key === 'Escape') return onDone()
+      if (e.key !== 'Tab') return
+      const btns = [...(cardRef.current?.querySelectorAll<HTMLElement>('button') ?? [])]
+      if (!btns.length) return
+      const at = btns.indexOf(document.activeElement as HTMLElement)
+      e.preventDefault()
+      btns[(at + (e.shiftKey ? -1 : 1) + btns.length) % btns.length].focus()
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      prev?.focus?.()
+    }
   }, [onDone])
 
   const step = steps[i]

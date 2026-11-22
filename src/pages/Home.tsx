@@ -155,6 +155,8 @@ export default function Home() {
   // По ссылке учителя (задание/мелодия) не показываем: человек пришёл за конкретным делом.
   const [tourDone, setTourDone] = usePersisted('tourDone', !!(URL_TASK || URL_MELODY))
   const finishTour = useCallback(() => setTourDone(true), [setTourDone])
+  // один массив на язык: новый на каждый рендер заставлял тур заново прокручивать страницу
+  const tourStepsList = useMemo(() => tourSteps(pick(TOUR, lang)), [lang])
   const [moreOpen, setMoreOpen] = useState(false)
   const moreBtn = useRef<HTMLButtonElement>(null)
   // открытие из задания: какую мелодию/трель показать; key пересоздаёт экран с новыми настройками
@@ -162,7 +164,7 @@ export default function Home() {
   const [openTrill, setOpenTrill] = useState<string | undefined>()
   const [screenKey, setScreenKey] = useState(0)
   // мелодия из ссылки: открываем экран «Мелодии» с ней (объект один на весь сеанс)
-  const [sharedMelody] = useState(URL_MELODY)
+  const [sharedMelody, setSharedMelody] = useState(URL_MELODY)
   const [installEvt, setInstallEvt] = useState<InstallEvent | null>(null)
   const railRef = useRef<HTMLDivElement>(null)
 
@@ -236,6 +238,7 @@ export default function Home() {
     // та же ссылка ещё раз (или перезагрузка) — галочки ученика сохраняем
     if (task && encodeTask(task) === encodeTask(URL_TASK)) return
     setTask(URL_TASK)
+    setProgram(null) // это задание учителя, а не неделя программы
     try {
       localStorage.setItem('sax.taskCollapsed', 'false')
     } catch {
@@ -559,6 +562,7 @@ export default function Home() {
         nextQuestion(it.kind)
         break
       case 'melody':
+        setSharedMelody(undefined)
         setBpm(MELODIES.find((m) => m.id === it.id)?.bpm ?? bpm)
         setOpenMelody(it.id)
         setMode('melodies')
@@ -631,6 +635,8 @@ export default function Home() {
                   // ручной выбор вкладки — без «мелодии из задания», своя память экрана
                   setOpenMelody(undefined)
                   setOpenTrill(undefined)
+                  // мелодия из ссылки открывается один раз — дальше экран помнит своё
+                  setSharedMelody(undefined)
                   setMode(m)
                   setVariant(0)
                   if (m === 'quiz' && mode !== 'quiz') nextQuestion()
@@ -1121,13 +1127,21 @@ export default function Home() {
           melodyTitle={melodyTitle}
           trillTitle={trillTitle}
           onStart={(tk, meta) => {
+            // задание учителя с невыполненными пунктами не затираем молча
+            const fromTeacher = task && !program && task.items.some((x) => !x.done)
+            if (fromTeacher && !confirm(pick(PROGRAMS_I18N, lang).replaceTask)) return
+            try {
+              localStorage.setItem('sax.taskCollapsed', 'false')
+            } catch {
+              /* приватный режим */
+            }
             setTask(tk)
             setProgram(meta)
             setProgramsOpen(false)
           }}
         />
       )}
-      {!tourDone && !FULL.includes(mode) && <Tour steps={tourSteps(pick(TOUR, lang))} onDone={finishTour} lang={lang} t={t} />}
+      {!tourDone && !FULL.includes(mode) && <Tour steps={tourStepsList} onDone={finishTour} lang={lang} t={t} />}
       {builderOpen && (
         <TaskBuilder
           onClose={() => setBuilderOpen(false)}

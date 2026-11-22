@@ -155,6 +155,9 @@ export interface PlayOpts {
   seconds?: number
   /** вызовется, когда звук закончился или был заглушён */
   onEnd?: () => void
+  /** только синтез, без записей: мелодии и трели держат длину ноты сами,
+   *  а у записи (в том числе своей) своя длительность */
+  synth?: boolean
 }
 
 /**
@@ -170,7 +173,7 @@ export function playNote(id: string, hasRecording: boolean, inst: Instrument, op
     opts.onEnd?.()
   }
   const mine = own.get(id)
-  if ((mine || hasRecording) && !opts.long) {
+  if ((mine || hasRecording) && !opts.long && !opts.synth) {
     const a = new Audio(mine ? mine.url : audioFile(id))
     // ponytail: сдвиг скорости меняет и тембр/длину; для тенора/баритона честнее
     // отдельные записи (режим «Запись»)

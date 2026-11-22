@@ -73,7 +73,7 @@ export default function Trills({ instrument, lang, t, sharp, initialId }: Props)
       setPhase(p)
       // всегда синтез (hasRecording=false): mp3 через new Audio() каждый раз грузится
       // заново и запаздывает — на быстрой трели ритм развалился бы
-      playNote(p ? tr.to : tr.from, false, instrument, { seconds: (ms / 1000) * 0.95 })
+      playNote(p ? tr.to : tr.from, false, instrument, { synth: true, seconds: (ms / 1000) * 0.95 })
       timer.current = setTimeout(() => tick(k + 1), ms)
     }
     tick(0)

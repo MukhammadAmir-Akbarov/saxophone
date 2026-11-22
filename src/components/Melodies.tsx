@@ -11,7 +11,7 @@ import FingeringDiagram from './FingeringDiagram'
 import { pick, type Lang, type STRINGS } from '../lib/i18n'
 import { MELODIES_I18N } from '../lib/i18n/melodies'
 import { startAccomp } from '../lib/accomp'
-import { encodeMelody, fitShift, parseMelody, transposeNotes, type MelodyNote, type SharedMelody } from '../lib/melody'
+import { encodeMelody, fitShift, lowestFor, parseMelody, transposeNotes, type MelodyNote, type SharedMelody } from '../lib/melody'
 import { clampBpm, onMetronomeChange, startMetronome, stopMetronome } from '../lib/metronome'
 import { usePersisted } from '../lib/persist'
 import { keyIsSharp, TONIC_NAMES } from '../lib/scales'
@@ -102,13 +102,13 @@ export default function Melodies({ instrument, lang, t, bpm, setBpm, sharp, init
 
   // ── транспозиция ──
   // сдвиг перестал помещаться (поправили текст) — играем как написано
-  const fit = (x: number) => fitShift(parsed.notes, x)
+  const fit = (x: number) => fitShift(parsed.notes, x, lowestFor(instrument))
   const shown = fit(shift) === null ? 0 : shift
   const eff = fit(shown) ?? 0
   const keyPc = melody ? (((melody.key + eff) % 12) + 12) % 12 : null
   // знаки — по новой тональности (фа мажор — бемоли, ре мажор — диезы); у своей мелодии
   // тональность неизвестна — как в общей настройке
-  const notes = transposeNotes(parsed.notes, eff, keyPc === null ? sharp : keyIsSharp(keyPc, 'major')) ?? parsed.notes
+  const notes = transposeNotes(parsed.notes, eff, keyPc === null ? sharp : keyIsSharp(keyPc, 'major'), lowestFor(instrument)) ?? parsed.notes
   const nextShift = (d: 1 | -1) => {
     for (let x = shown + d; Math.abs(x) <= 6; x += d) if (fit(x) !== null) return x
     return null
@@ -221,7 +221,7 @@ export default function Melodies({ instrument, lang, t, bpm, setBpm, sharp, init
                 onChange={(e) => editCustom({ meter: Number(e.target.value) })}
                 className="h-11 rounded-xl border border-[var(--c-4a3b22)] bg-[var(--c-14100a)] px-3 font-normal text-[var(--c-f0e6d2)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
               >
-                {[2, 3, 4, 6].map((m) => (
+                {[2, 3, 4, 5, 6, 7].map((m) => (
                   <option key={m} value={m}>
                     {m}/4
                   </option>
@@ -349,7 +349,7 @@ function Player({ notes, meter, chords, shift, instrument, t, s, bpm, setBpm, sh
     if (n.index === null) return stopAll()
     const sn = NOTES[n.index]
     // синтез, а не запись: у mp3 своя длина (~0.7 с), и длинные ноты мелодии обрывались бы
-    playNote(sn.id, false, instrument, { seconds: seconds ?? Math.min(1.5, n.beats * (60 / bpm) * 0.9) })
+    playNote(sn.id, false, instrument, { synth: true, seconds: seconds ?? Math.min(1.5, n.beats * (60 / bpm) * 0.9) })
   }
 
   const clearTimers = () => {
@@ -445,7 +445,7 @@ function Player({ notes, meter, chords, shift, instrument, t, s, bpm, setBpm, sh
             else {
               const sn = NOTES[n.index]
               // 0.9 — короткий зазор между нотами, иначе повторы (G G G) сливаются в одну
-              playNote(sn.id, false, instrument, { seconds: n.beats * beatSec * 0.9 })
+              playNote(sn.id, false, instrument, { synth: true, seconds: n.beats * beatSec * 0.9 })
             }
           }
           const off = (starts[i] - k) * beatSec * 1000

@@ -64,8 +64,11 @@ export function startAccomp(chords: string, bpm: number, startTime: number, inst
     const len = c.beats * beat
     if (c.pc !== null) {
       const pc = c.pc + transpose + TRANSPOSE[instrument]
-      voice(midiToFreq(inWindow(pc, BASS_LO)), 'triangle', t, len, 0.22, true)
-      const root = inWindow(pc, PAD_LO)
+      // тенор и баритон звучат на октаву (и ниже) ниже альта — опускаем и аккомпанемент,
+      // иначе пэд оказался бы поверх мелодии саксофона
+      const low = TRANSPOSE[instrument] <= -14 ? -12 : 0
+      voice(midiToFreq(inWindow(pc, BASS_LO + low)), 'triangle', t, len, 0.22, true)
+      const root = inWindow(pc, PAD_LO + low)
       const tones = CHORD_TONES[c.quality]
       // громкость делим на число голосов: септаккорд не громче трезвучия
       for (const iv of tones) voice(midiToFreq(root + iv), 'sine', t, len, 0.09 / tones.length, false)

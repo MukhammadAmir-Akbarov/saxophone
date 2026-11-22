@@ -69,6 +69,8 @@ export const totalBeats = (notes: MelodyNote[]) => notes.reduce((s, n) => s + n.
 // Письменный диапазон для сдвига: A3…F6. Выше F6 — альтиссимо, первогодку
 // там нечего делать; транспонированная мелодия туда уходить не должна.
 const LO = 57
+/** нижняя письменная нота инструмента: A3 (низкое A) есть только у баритона */
+export const lowestFor = (inst: string) => (inst === 'baritone' ? LO : LO + 1)
 const HI = 89
 
 /**
@@ -76,7 +78,7 @@ const HI = 89
  * Хоть одна нота вне A3…F6 → null: такой вариант ученику не предлагаем.
  * Ноль — мелодия как есть, со своим написанием (даже если автор залез в альтиссимо).
  */
-export function transposeNotes(notes: MelodyNote[], semis: number, sharp: boolean): MelodyNote[] | null {
+export function transposeNotes(notes: MelodyNote[], semis: number, sharp: boolean, lowest = LO + 1): MelodyNote[] | null {
   if (!semis) return notes
   const out: MelodyNote[] = []
   for (const n of notes) {
@@ -85,7 +87,7 @@ export function transposeNotes(notes: MelodyNote[], semis: number, sharp: boolea
       continue
     }
     const m = writtenMidi(NOTES[n.index].id) + semis
-    const index = m >= LO && m <= HI ? BY_MIDI.get(m) : undefined
+    const index = m >= lowest && m <= HI ? BY_MIDI.get(m) : undefined
     if (index === undefined) return null
     out.push({ ...n, index, sharp })
   }
@@ -96,9 +98,9 @@ export function transposeNotes(notes: MelodyNote[], semis: number, sharp: boolea
  * Реальный сдвиг для выбранной тональности: не влезает — та же тональность
  * октавой выше или ниже (−6 и +6 — одна тональность). Совсем никак — null.
  */
-export function fitShift(notes: MelodyNote[], semis: number): number | null {
+export function fitShift(notes: MelodyNote[], semis: number, lowest = LO + 1): number | null {
   if (!semis) return 0
-  for (const s of [semis, semis + 12, semis - 12]) if (transposeNotes(notes, s, false)) return s
+  for (const s of [semis, semis + 12, semis - 12]) if (transposeNotes(notes, s, false, lowest)) return s
   return null
 }
 

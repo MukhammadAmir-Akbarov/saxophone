@@ -55,6 +55,11 @@ const SHAPES: KeyShape[] = [
   { id: 'lowC', label: 'C', lx: 336, ly: 537, anchor: 'end', kind: 'rect', cx: 268, cy: 520, rx: 0, ry: 0 },
 ]
 
+// Мелкие клапаны (бис 20×10) пальцем на телефоне не попасть — в тренажёре даём им
+// невидимую зону нажатия побольше и рисуем их последними, чтобы зона была сверху L1/L2.
+const SMALL = new Set<KeyId>(['bis', 'front', 'lowA', 'fsh'])
+const ORDERED = [...SHAPES.filter((k) => !SMALL.has(k.id)), ...SHAPES.filter((k) => SMALL.has(k.id))]
+
 const RECT_W = 30
 const RECT_H = 26
 
@@ -100,7 +105,7 @@ export default function FingeringDiagram({ pressed, onToggle, missing = NONE, ex
       {/* перемычка между руками */}
       <line x1="96" y1="347" x2="212" y2="347" style={{ stroke: 'var(--c-5c4c2e)' }} strokeWidth="3" strokeLinecap="round" />
 
-      {SHAPES.map((k) => {
+      {(interactive ? ORDERED : SHAPES).map((k) => {
         const on = pressed.has(k.id)
         const miss = missing.has(k.id)
         const bad = extra.has(k.id)
@@ -144,7 +149,11 @@ export default function FingeringDiagram({ pressed, onToggle, missing = NONE, ex
               <ellipse cx={k.cx} cy={k.cy} rx={k.rx} ry={k.ry} {...common}>
                 <title>{name}</title>
               </ellipse>
-            ) : (
+            ) : null}
+            {interactive && SMALL.has(k.id) && (
+              <ellipse cx={k.cx} cy={k.cy} rx={Math.max(k.rx, 15)} ry={k.id === 'bis' ? 9 : Math.max(k.ry, 15)} style={{ fill: 'transparent' }} />
+            )}
+            {k.kind === 'ellipse' ? null : (
               <rect
                 x={k.cx}
                 y={k.cy}
