@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Copy, Send, Share2, X } from 'lucide-react'
 import { NOTES, type SaxNote } from '../data/notes'
 import { pick, type Lang, type STRINGS } from '../lib/i18n'
@@ -205,7 +205,8 @@ export default function DiaryModal({ onClose, lang, t, nameOf }: Props) {
     return () => window.removeEventListener(DIARY_EVENT, upd)
   }, [])
 
-  const days = useMemo(() => weekDays(), [])
+  // каждый рендер: окно могли оставить открытым через полночь
+  const days = weekDays()
   const today = days[6]
   const weekTotal = days.reduce((a, day) => a + daySeconds(day, diary), 0)
   const acts = byActivity(days, diary)

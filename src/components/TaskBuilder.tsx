@@ -4,6 +4,7 @@ import { NOTES, type SaxNote } from '../data/notes'
 import { pick, type Lang, type STRINGS } from '../lib/i18n'
 import { TASK } from '../lib/i18n/task'
 import { usePersisted } from '../lib/persist'
+import NumInput from './NumInput'
 import { PATTERNS, SCALE_TYPES, TONIC_NAMES, type Pattern, type ScaleType } from '../lib/scales'
 import type { Instrument } from '../lib/sound'
 import { MAX_ITEMS, TASK_KINDS, taskUrl, type Task, type TaskItem, type TaskKind } from '../lib/task'
@@ -47,18 +48,7 @@ const Field = ({ label, children }: { label: string; children: ReactNode }) => (
 /** числовое поле: пустое/мусор не пишем в черновик, границы — те же, что при разборе ссылки */
 const Num = ({ label, value, lo, hi, set }: { label: string; value: number; lo: number; hi: number; set: (v: number) => void }) => (
   <Field label={label}>
-    <input
-      type="number"
-      inputMode="numeric"
-      min={lo}
-      max={hi}
-      value={value}
-      onChange={(e) => {
-        const v = Math.round(Number(e.target.value))
-        if (Number.isFinite(v)) set(Math.max(lo, Math.min(hi, v)))
-      }}
-      className={`${FIELD} w-20`}
-    />
+    <NumInput value={value} lo={lo} hi={hi} onCommit={set} className={`${FIELD} w-20`} />
   </Field>
 )
 

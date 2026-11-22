@@ -5,7 +5,7 @@
 import { NOTES, type SaxNote } from '../data/notes'
 import type { STRINGS } from './i18n'
 import type { TASK } from './i18n/task'
-import { SCALE_TYPES, tonicName, type ScaleType } from './scales'
+import { PATTERNS, SCALE_TYPES, tonicName, type ScaleType , type Pattern} from './scales'
 
 export type TaskItem =
   | { k: 'scale'; tonic: number; type: ScaleType; octaves: 1 | 2; pattern?: string; bpm: number; min?: number }
@@ -51,7 +51,8 @@ function cleanItem(raw: unknown): TaskItem | null {
         octaves: o.octaves === 2 ? 2 : 1,
         bpm: num(o.bpm, 20, 300, 80),
       }
-      if (typeof o.pattern === 'string' && SLUG.test(o.pattern)) it.pattern = o.pattern
+      // только известные упражнения: незнакомое имя из ссылки уронило бы экран гамм
+      if (PATTERNS.includes(o.pattern as Pattern)) it.pattern = o.pattern as Pattern
       if (o.min !== undefined) it.min = num(o.min, 1, 120, 5)
       return it
     }

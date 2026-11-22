@@ -67,9 +67,9 @@ export const TRILLS: Trill[] = [
     base: [...L123, 'r1'],
     move: ['fsh'],
     tip: {
-      ru: 'Держите F и нажимайте трельный клапан F♯ (между R1 и R2) безымянным пальцем правой руки — так чище, чем вилкой.',
-      uz: 'F ni ushlab turing va F♯ trel klapanini (R1 va R2 orasida) o‘ng qo‘l nomsiz barmog‘i bilan bosing — vilkadan ko‘ra tozaroq.',
-      en: 'Hold F and press the F♯ trill key (between R1 and R2) with your right ring finger — cleaner than the fork fingering.',
+      ru: 'Держите F и нажимайте трельный клапан F♯ (между R2 и R3) безымянным пальцем правой руки — так чище, чем вилкой.',
+      uz: 'F ni ushlab turing va F♯ trel klapanini (R2 va R3 orasida) o‘ng qo‘l nomsiz barmog‘i bilan bosing — vilkadan ko‘ra tozaroq.',
+      en: 'Hold F and press the F♯ trill key (between R2 and R3) with your right ring finger — cleaner than the fork fingering.',
     },
   },
   {

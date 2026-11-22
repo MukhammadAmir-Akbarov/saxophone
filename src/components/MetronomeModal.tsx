@@ -19,6 +19,7 @@ import {
   type ClickSound,
 } from '../lib/metronome'
 import { usePersisted } from '../lib/persist'
+import NumInput from './NumInput'
 import type { STRINGS } from '../lib/i18n'
 
 interface Props {
@@ -141,7 +142,7 @@ export default function MetronomeModal({ onClose, bpm, setBpm, beats, setBeats, 
       if (e.key === 'Escape') return onClose()
       const el = e.target as HTMLElement
       if (el.tagName === 'INPUT' || el.tagName === 'SELECT') return
-      if (e.key === ' ' && !el.closest('button')) {
+      if (e.key === ' ' && !el.closest('button,summary,a')) {
         e.preventDefault()
         toggleRef.current()
       } else if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
@@ -390,11 +391,11 @@ export default function MetronomeModal({ onClose, bpm, setBpm, beats, setBeats, 
           </label>
           <div className="mt-1.5 flex flex-wrap items-center gap-2 pl-6 text-sm text-[var(--c-c9b892)]">
             +
-            <input type="number" min={1} max={20} value={speed.step} onChange={(e) => setSpeed({ ...speed, step: Math.max(1, Number(e.target.value) || 1) })} className={NUM} aria-label={t.speedStep} />
+            <NumInput lo={1} hi={20} value={speed.step} onCommit={(v) => setSpeed({ ...speed, step: v })} className={NUM} aria-label={t.speedStep} />
             {t.bpm} {t.every}
-            <input type="number" min={1} max={32} value={speed.every} onChange={(e) => setSpeed({ ...speed, every: Math.max(1, Number(e.target.value) || 1) })} className={NUM} aria-label={t.barsWord} />
+            <NumInput lo={1} hi={32} value={speed.every} onCommit={(v) => setSpeed({ ...speed, every: v })} className={NUM} aria-label={t.barsWord} />
             {t.barsWord}, {t.upTo}
-            <input type="number" min={20} max={300} value={speed.to} onChange={(e) => setSpeed({ ...speed, to: clampBpm(Number(e.target.value) || 120) })} className={NUM} aria-label={t.upTo} />
+            <NumInput lo={20} hi={300} value={speed.to} onCommit={(v) => setSpeed({ ...speed, to: v })} className={NUM} aria-label={t.upTo} />
           </div>
 
           <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm font-semibold text-[var(--c-e8d5ae)]">
@@ -402,9 +403,9 @@ export default function MetronomeModal({ onClose, bpm, setBpm, beats, setBeats, 
             {t.gapTrainer}
           </label>
           <div className="mt-1.5 flex flex-wrap items-center gap-2 pl-6 text-sm text-[var(--c-c9b892)]">
-            <input type="number" min={1} max={16} value={gap.play} onChange={(e) => setGap({ ...gap, play: Math.max(1, Number(e.target.value) || 1) })} className={NUM} aria-label={t.gapPlay} />
+            <NumInput lo={1} hi={16} value={gap.play} onCommit={(v) => setGap({ ...gap, play: v })} className={NUM} aria-label={t.gapPlay} />
             {t.gapPlay},
-            <input type="number" min={1} max={16} value={gap.mute} onChange={(e) => setGap({ ...gap, mute: Math.max(1, Number(e.target.value) || 1) })} className={NUM} aria-label={t.gapMute} />
+            <NumInput lo={1} hi={16} value={gap.mute} onCommit={(v) => setGap({ ...gap, mute: v })} className={NUM} aria-label={t.gapMute} />
             {t.gapMute}
           </div>
           <p className="mt-1 pl-6 text-[11px] text-[var(--c-7a6845)]">{t.gapHint}</p>

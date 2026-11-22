@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Check, ChevronLeft, ChevronRight, Minus, Music, Pencil, Play, Plus, RotateCcw, SkipForward, Square, Volume2 } from 'lucide-react'
 import { NOTES, notationFile } from '../data/notes'
-import { MELODIES, type Melody } from '../data/melodies'
+import { melodyTitle, MELODIES, type Melody } from '../data/melodies'
 import FingeringDiagram from './FingeringDiagram'
 import { pick, type Lang, type STRINGS } from '../lib/i18n'
 import { MELODIES_I18N } from '../lib/i18n/melodies'
@@ -12,7 +12,6 @@ import { parseMelody, type MelodyNote } from '../lib/melody'
 import { clampBpm, onMetronomeChange, startMetronome, stopMetronome } from '../lib/metronome'
 import { usePersisted } from '../lib/persist'
 import { midiName, playNote, stopAll, writtenMidi, type Instrument } from '../lib/sound'
-import { toCyrillic } from '../lib/translit'
 import { usePitch } from '../lib/usePitch'
 
 type Strings = (typeof STRINGS)['ru']
@@ -39,7 +38,7 @@ const BTN =
 const ON = 'bg-gradient-to-br from-[var(--c-f6d98a)] to-[var(--c-c8922e)] text-[var(--c-241a08)]'
 const PRIMARY = `flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] ${ON}`
 
-const titleOf = (m: Melody, lang: Lang) => (lang === 'uzc' ? toCyrillic(m.title.uz) : m.title[lang])
+const titleOf = (m: Melody, lang: Lang) => melodyTitle(m, lang)
 
 const FRAC: Record<string, string> = { '0.25': '¼', '0.5': '½', '0.75': '¾' }
 /** 1.5 → «1½», 0.5 → «½»: подпись длительности на фишке ноты */
@@ -198,7 +197,8 @@ function Player({ notes, meter, instrument, t, s, bpm, setBpm, sharp }: PlayerPr
     const n = notes[k]
     if (n.index === null) return stopAll()
     const sn = NOTES[n.index]
-    playNote(sn.id, sn.sound, instrument, { seconds: seconds ?? Math.min(1.5, n.beats * (60 / bpm) * 0.9) })
+    // синтез, а не запись: у mp3 своя длина (~0.7 с), и длинные ноты мелодии обрывались бы
+    playNote(sn.id, false, instrument, { seconds: seconds ?? Math.min(1.5, n.beats * (60 / bpm) * 0.9) })
   }
 
   const clearTimers = () => {
@@ -282,7 +282,7 @@ function Player({ notes, meter, instrument, t, s, bpm, setBpm, sharp }: PlayerPr
             else {
               const sn = NOTES[n.index]
               // 0.9 — короткий зазор между нотами, иначе повторы (G G G) сливаются в одну
-              playNote(sn.id, sn.sound, instrument, { seconds: n.beats * beatSec * 0.9 })
+              playNote(sn.id, false, instrument, { seconds: n.beats * beatSec * 0.9 })
             }
           }
           const off = (starts[i] - k) * beatSec * 1000
@@ -346,9 +346,8 @@ function Player({ notes, meter, instrument, t, s, bpm, setBpm, sharp }: PlayerPr
       {/* лента нот: имя + длительность в долях */}
       <div ref={chipsRef} className="flex gap-1.5 overflow-x-auto pb-1" role="list" aria-label={s.notes}>
         {notes.map((n, k) => (
+          <div key={k} role="listitem" className="shrink-0">
           <button
-            key={k}
-            role="listitem"
             data-active={k === pos}
             // в режиме проверки ноты выбирает микрофон, а не палец
             disabled={mode === 'check' || playing}
@@ -361,6 +360,7 @@ function Player({ notes, meter, instrument, t, s, bpm, setBpm, sharp }: PlayerPr
             <span className="text-sm font-semibold">{n.index === null ? '𝄽' : noteName(n)}</span>
             <span className={`text-[10px] ${k === pos ? 'text-[var(--c-241a08)]' : 'text-[var(--c-7a6845)]'}`}>{beatsLabel(n.beats)}</span>
           </button>
+          </div>
         ))}
       </div>
 
@@ -448,6 +448,9 @@ function CheckMode({ notes, first, pos, setPos, instrument, t, s, sharp }: Check
   const startedAt = useRef(performance.now())
   const holdFrom = useRef<number | null>(null)
   const quietTill = useRef(0)
+  // та же нота подряд (G G G): следующую засчитываем только после «отпустил» —
+  // тишины или другой высоты, иначе одна долгая нота прошла бы их все
+  const needRelease = useRef(false)
   const flashTimer = useRef(0)
 
   const cur = notes[pos]
@@ -461,6 +464,7 @@ function CheckMode({ notes, first, pos, setPos, instrument, t, s, sharp }: Check
     while (k < notes.length && notes[k].index === null) k++
     holdFrom.current = null
     quietTill.current = now + COOLDOWN_MS
+    needRelease.current = k < notes.length && notes[k].index === notes[pos].index
     if (k >= notes.length) setDoneSec((now - startedAt.current) / 1000)
     else setPos(k)
   }
@@ -468,6 +472,11 @@ function CheckMode({ notes, first, pos, setPos, instrument, t, s, sharp }: Check
   const { denied, muteUntil } = usePitch(instrument, (v, now) => {
     // шаг 0.05 полутона = 5 центов: реже перерисовка, глазу хватает
     setLive(v === null ? null : Math.round(v * 20) / 20)
+    if (needRelease.current) {
+      if (v === null || Math.round(v) !== target) needRelease.current = false
+      holdFrom.current = null
+      return
+    }
     if (doneSec !== null || target === null || v === null || now < quietTill.current) {
       holdFrom.current = null
       return

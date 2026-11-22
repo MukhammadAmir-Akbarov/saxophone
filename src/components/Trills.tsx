@@ -101,9 +101,8 @@ export default function Trills({ instrument, lang, t, sharp, initialId }: Props)
 
       <div className="flex gap-1.5 overflow-x-auto pb-1" role="list" aria-label={s.list}>
         {TRILLS.map((x) => (
+          <div key={x.id} role="listitem" className="shrink-0">
           <button
-            key={x.id}
-            role="listitem"
             onClick={() => select(x)}
             aria-current={x.id === tr.id}
             className={`h-10 shrink-0 cursor-pointer rounded-lg px-3 text-sm font-semibold whitespace-nowrap transition-all focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] ${
@@ -112,6 +111,7 @@ export default function Trills({ instrument, lang, t, sharp, initialId }: Props)
           >
             {name(x.from)} ⇄ {name(x.to)}
           </button>
+          </div>
         ))}
       </div>
 

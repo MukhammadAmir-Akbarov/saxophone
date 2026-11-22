@@ -14,11 +14,14 @@ interface Props {
   lang: Lang
   bpm: number
   setBpm: (v: number) => void
+  /** строй A4 — при смене бурдон перестраивается */
+  a4: number
   t: (typeof STRINGS)['ru']
 }
 
 // такт отсчёта перед гаммой — чтобы успеть взять инструмент и вступить вместе
 const COUNT_IN = 4
+const SEVEN: ScaleType[] = ['major', 'minor', 'harmonic']
 
 const SEL =
   'h-11 cursor-pointer rounded-xl border border-[var(--c-4a3b22)] bg-[var(--c-14100a)] px-2 text-sm font-semibold text-[var(--c-e8d5ae)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]'
@@ -26,7 +29,7 @@ const BTN =
   'flex h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--c-4a3b22)] px-3 text-sm font-semibold text-[var(--c-e8d5ae)] transition-colors hover:bg-[var(--c-241c11)] hover:text-[var(--c-f2c14e)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] disabled:cursor-not-allowed disabled:opacity-40'
 const ON = 'bg-gradient-to-br from-[var(--c-f6d98a)] to-[var(--c-c8922e)] text-[var(--c-241a08)]'
 
-export default function Scales({ instrument, lang, bpm, setBpm, t }: Props) {
+export default function Scales({ instrument, lang, bpm, setBpm, a4, t }: Props) {
   const [tonic, setTonic] = usePersisted('scaleTonic', 0)
   const [type, setType] = usePersisted<ScaleType>('scaleType', 'major')
   const [octaves, setOctaves] = usePersisted<1 | 2>('scaleOctaves', 1)
@@ -41,16 +44,27 @@ export default function Scales({ instrument, lang, bpm, setBpm, t }: Props) {
   const [countIn, setCountIn] = useState(0)
   const chipsRef = useRef<HTMLDivElement>(null)
 
-  const seq = useMemo(() => buildScale(tonic, type, octaves, pattern), [tonic, type, octaves, pattern])
+  // терции/кварты/трезвучия считаются по ступеням 7-звучной гаммы; на арпеджио и
+  // хроматике они дали бы не те интервалы — там только «подряд» и группы
+  const allowed = SEVEN.includes(type) ? PATTERNS : PATTERNS.filter((p) => p === 'plain' || p.startsWith('groups'))
+  // старое/чужое значение из памяти или ссылки — не роняем экран
+  const pat: Pattern = allowed.includes(pattern) ? pattern : 'plain'
+  const seq = useMemo(() => buildScale(tonic, type, octaves, pat), [tonic, type, octaves, pat])
   // бурдон на звучащей тонике выбранного строя (у альта письменная C звучит как E♭)
   const droneMidi = concertMidi(NOTES[seq[0].index].id, instrument)
+  const selfStop = useRef(false)
   useEffect(() => {
     if (!drone) return
     startDrone(droneFifth ? [droneMidi, droneMidi + 7] : [droneMidi])
-    return () => stopDrone()
-  }, [drone, droneMidi, droneFifth])
-  // тюнер глушит бурдон (иначе микрофон слушал бы его) — кнопка должна погаснуть
-  useEffect(() => onDroneChange((on) => !on && setDrone(false)), [])
+    return () => {
+      // свой перезапуск (смена тоники, квинты, строя) — не «выключили извне»
+      selfStop.current = true
+      stopDrone()
+      selfStop.current = false
+    }
+  }, [drone, droneMidi, droneFifth, a4])
+  // тюнер/запись глушат бурдон (иначе микрофон слушал бы его) — кнопка должна погаснуть
+  useEffect(() => onDroneChange((on) => !on && !selfStop.current && setDrone(false)), [])
   const cur = seq[Math.min(pos, seq.length - 1)]
   const note = NOTES[cur.index]
   const name = (k: number) => {
@@ -178,8 +192,8 @@ export default function Scales({ instrument, lang, bpm, setBpm, t }: Props) {
         <label className="sr-only" htmlFor="scalePattern">
           {t.patternLabel}
         </label>
-        <select id="scalePattern" value={pattern} onChange={(e) => change(setPattern)(e.target.value as Pattern)} className={SEL}>
-          {PATTERNS.map((p) => (
+        <select id="scalePattern" value={pat} onChange={(e) => change(setPattern)(e.target.value as Pattern)} className={SEL}>
+          {allowed.map((p) => (
             <option key={p} value={p}>
               {patternLabel[p]}
             </option>

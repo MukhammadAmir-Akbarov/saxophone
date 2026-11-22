@@ -176,7 +176,9 @@ export function playNote(id: string, hasRecording: boolean, inst: Instrument, op
     // отдельные записи (режим «Запись»)
     a.preservesPitch = false
     // записи сделаны при A = 440: под строй ансамбля чуть ускоряем/замедляем
-    a.playbackRate = 2 ** ((TRANSPOSE[inst] - TRANSPOSE[mine ? mine.instrument : RECORDED_ON]) / 12) * (A4 / 440)
+    // встроенные записи сделаны при A = 440 — под строй ансамбля чуть сдвигаем;
+    // свои записи уже сделаны на подстроенном инструменте — их не трогаем
+    a.playbackRate = 2 ** ((TRANSPOSE[inst] - TRANSPOSE[mine ? mine.instrument : RECORDED_ON]) / 12) * (mine ? 1 : A4 / 440)
     a.onended = end
     a.onerror = end
     void a.play().catch(end)

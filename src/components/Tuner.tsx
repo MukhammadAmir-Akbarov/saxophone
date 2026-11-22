@@ -58,9 +58,10 @@ function drawGraph(cv: HTMLCanvasElement, hist: Array<{ t: number; c: number | n
   const dpr = window.devicePixelRatio || 1
   const w = cv.clientWidth
   const h = cv.clientHeight
-  if (cv.width !== w * dpr) {
-    cv.width = w * dpr
-    cv.height = h * dpr
+  // целые размеры: при дробном dpr сравнение «!==» было бы истинно каждый кадр
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+    cv.width = Math.round(w * dpr)
+    cv.height = Math.round(h * dpr)
   }
   const g = cv.getContext('2d')!
   g.setTransform(dpr, 0, 0, dpr, 0, 0)
@@ -195,6 +196,11 @@ export default function Tuner({ onClose, instrument, sharp, note, nameOf, tab, o
         }
       }
 
+      // тишина в «За мной» обнуляет удержание: два коротких звука не должны сложиться в «верно»
+      if (tab === 'follow' && fPhase === 'listen' && v === null) {
+        fOk.current = 0
+        fWrongSince.current = null
+      }
       if (tab === 'follow' && fPhase === 'listen' && v !== null) {
         const m = Math.round(v)
         if (m === targetMidi && Math.abs(c!) <= FOLLOW_TOL) {

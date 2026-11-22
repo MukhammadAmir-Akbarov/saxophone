@@ -20,7 +20,7 @@ import { TRILLS } from '../data/trills'
 import { pick } from '../lib/i18n'
 import { TASK } from '../lib/i18n/task'
 import { usePracticeTracker, type Activity } from '../lib/practice'
-import { decodeTask, type Task, type TaskItem } from '../lib/task'
+import { decodeTask, encodeTask, type Task, type TaskItem } from '../lib/task'
 import { toCyrillic } from '../lib/translit'
 import { getA4, setA4 as applyA4 } from '../lib/sound'
 import { STRINGS, altName, hintText, keyLabel, type Lang } from '../lib/i18n'
@@ -142,6 +142,7 @@ export default function Home() {
   const [printOpen, setPrintOpen] = useState(false)
   const [builderOpen, setBuilderOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
+  const moreBtn = useRef<HTMLButtonElement>(null)
   // открытие из задания: какую мелодию/трель показать; key пересоздаёт экран с новыми настройками
   const [openMelody, setOpenMelody] = useState<string | undefined>()
   const [openTrill, setOpenTrill] = useState<string | undefined>()
@@ -208,6 +209,8 @@ export default function Home() {
   // задание из ссылки: сохраняем (галочки переживут перезагрузку) и раскрываем панель
   useEffect(() => {
     if (!URL_TASK) return
+    // та же ссылка ещё раз (или перезагрузка) — галочки ученика сохраняем
+    if (task && encodeTask(task) === encodeTask(URL_TASK)) return
     setTask(URL_TASK)
     try {
       localStorage.setItem('sax.taskCollapsed', 'false')
@@ -425,7 +428,7 @@ export default function Home() {
   // клавиатура: стрелки — навигация, пробел — звук, Enter — проверить/дальше
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (legendOpen || tunerOpen || metroOpen || recOpen || anyModal || FULL.includes(mode)) return
+      if (legendOpen || tunerOpen || metroOpen || recOpen || anyModal || moreOpen || FULL.includes(mode)) return
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'SELECT' || tag === 'INPUT') return
       if (mode === 'table' && (e.key === 'ArrowRight' || e.key === 'ArrowUp')) {
@@ -451,7 +454,7 @@ export default function Home() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [safeIndex, select, play, legendOpen, tunerOpen, metroOpen, recOpen, anyModal, mode, answered, nextQuestion, check, choiceKind, options, quizKind, hideAnswer])
+  }, [safeIndex, select, play, legendOpen, tunerOpen, metroOpen, recOpen, anyModal, moreOpen, mode, answered, nextQuestion, check, choiceKind, options, quizKind, hideAnswer])
 
   // прокрутка активной ноты в видимую область ленты. При первом показе — мгновенно:
   // плавная прокрутка во время загрузки страницы на телефоне обрывается на полпути.
@@ -532,6 +535,7 @@ export default function Home() {
         nextQuestion(it.kind)
         break
       case 'melody':
+        setBpm(MELODIES.find((m) => m.id === it.id)?.bpm ?? bpm)
         setOpenMelody(it.id)
         setMode('melodies')
         setScreenKey((k) => k + 1)
@@ -600,6 +604,9 @@ export default function Home() {
                 aria-selected={mode === m}
                 onClick={() => {
                   stopAll()
+                  // ручной выбор вкладки — без «мелодии из задания», своя память экрана
+                  setOpenMelody(undefined)
+                  setOpenTrill(undefined)
                   setMode(m)
                   setVariant(0)
                   if (m === 'quiz' && mode !== 'quiz') nextQuestion()
@@ -650,7 +657,7 @@ export default function Home() {
           </button>
           <button
             onClick={() => setMetroOpen(true)}
-            className={metroOn ? BTN_PRIMARY : BTN}
+            className={metroOn && metronomeOwner() === 'modal' ? BTN_PRIMARY : BTN}
             title={t.metronome}
             aria-label={t.metronome}
           >
@@ -667,13 +674,22 @@ export default function Home() {
           </button>
           {/* редкие действия — в меню, чтобы панель не разрасталась на телефоне */}
           <div className="relative">
-            <button onClick={() => setMoreOpen((v) => !v)} aria-expanded={moreOpen} aria-haspopup="menu" className={BTN} title={t.more} aria-label={t.more}>
+            <button ref={moreBtn} onClick={() => setMoreOpen((v) => !v)} aria-expanded={moreOpen} aria-haspopup="menu" className={BTN} title={t.more} aria-label={t.more}>
               <Ellipsis size={18} />
             </button>
             {moreOpen && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setMoreOpen(false)} aria-hidden="true" />
-                <div role="menu" className="absolute right-0 z-40 mt-1 w-56 rounded-xl border border-[var(--c-3a2f1c)] bg-[var(--c-1c1610)] p-1 shadow-2xl">
+                <div
+                  role="menu"
+                  // Escape закрывает меню и возвращает фокус на кнопку «Ещё»
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Escape') return
+                    setMoreOpen(false)
+                    moreBtn.current?.focus()
+                  }}
+                  ref={(el) => el?.querySelector<HTMLButtonElement>('[role=menuitem]')?.focus()}
+                  className="absolute right-0 z-40 mt-1 w-56 rounded-xl border border-[var(--c-3a2f1c)] bg-[var(--c-1c1610)] p-1 shadow-2xl">
                   {(
                     [
                       [Mic2, t.recTitle, () => setRecOpen(true)],
@@ -717,7 +733,7 @@ export default function Home() {
 
       {/* основная часть */}
       {mode === 'scales' ? (
-        <Scales key={screenKey} instrument={instrument} lang={lang} bpm={bpm} setBpm={setBpm} t={t} />
+        <Scales key={screenKey} instrument={instrument} lang={lang} bpm={bpm} setBpm={setBpm} a4={a4} t={t} />
       ) : mode === 'melodies' ? (
         <Melodies key={screenKey} instrument={instrument} lang={lang} t={t} bpm={bpm} setBpm={setBpm} sharp={sharpMode} initialMelodyId={openMelody} />
       ) : mode === 'trills' ? (

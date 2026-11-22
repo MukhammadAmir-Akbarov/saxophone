@@ -10,6 +10,8 @@
 //
 // Формат — см. src/lib/melody.ts. Каждую мелодию проверяли «напеванием» по слогам.
 
+import type { Lang } from '../lib/i18n'
+import { toCyrillic } from '../lib/translit'
 import { parseMelody, totalBeats } from '../lib/melody'
 
 export interface Melody {
@@ -150,4 +152,16 @@ if (import.meta.env?.DEV && typeof window !== 'undefined') {
     console.assert(p.errors.length === 0, 'melody errors', m.id, p.errors)
     console.assert(totalBeats(p.notes) % m.meter === 0, 'melody bars', m.id, totalBeats(p.notes))
   }
+}
+
+/**
+ * Название на нужном языке. Для узбекской кириллицы транслитерируем только
+ * узбекские слова: «Amazing Grace» или «(Au clair de la lune)» — имена собственные
+ * на чужом языке, кириллицей они превратились бы в абракадабру.
+ */
+export function melodyTitle(m: Melody, lang: Lang): string {
+  if (lang !== 'uzc') return m.title[lang]
+  if (m.title.uz === m.title.en) return m.title.uz
+  // текст в скобках — оригинальное название, оставляем как есть
+  return m.title.uz.replace(/^[^(]*/, (head) => toCyrillic(head))
 }

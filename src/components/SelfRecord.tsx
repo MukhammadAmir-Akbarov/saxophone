@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'rea
 import { Circle, RotateCcw, Square, X } from 'lucide-react'
 import { midiName, stopAll, type Instrument } from '../lib/sound'
 import { stopMetronome } from '../lib/metronome'
+import { stopDrone } from '../lib/drone'
 import { usePitch } from '../lib/usePitch'
 import { pick, type Lang, type STRINGS } from '../lib/i18n'
 import { SELFREC } from '../lib/i18n/selfrec'
@@ -181,6 +182,7 @@ export default function SelfRecord({ onClose, instrument, sharp, lang, t }: Prop
   // Как в тюнере: звук из динамика попал бы в запись и в график высоты.
   useEffect(() => {
     stopMetronome()
+    stopDrone() // бурдон из динамика попал бы в запись и на график
     stopAll()
   }, [])
 

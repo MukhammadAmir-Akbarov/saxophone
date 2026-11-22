@@ -84,7 +84,7 @@ export default function TaskPanel({ task, lang, t, nameOf, onToggle, onOpen, onC
                     <Check size={18} />
                   </button>
                   <span className={`min-w-0 flex-1 text-sm ${it.done ? 'text-[var(--c-7a6845)] line-through' : 'text-[var(--c-e8d5ae)]'}`}>{text}</span>
-                  <button onClick={() => onOpen(it)} className={`${BTN} shrink-0 px-3`}>
+                  <button onClick={() => onOpen(it)} aria-label={`${s.open}: ${text}`} className={`${BTN} shrink-0 px-3`}>
                     {s.open}
                   </button>
                 </li>
