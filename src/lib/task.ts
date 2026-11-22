@@ -124,6 +124,14 @@ export const taskUrl = (task: Task) => location.origin + location.pathname + '?t
 const QUIZ = { fingering: 'kindFingering', name: 'kindName', ear: 'kindEar' } as const
 
 /** человеческое описание пункта: «G мажор, 1 окт., 80 уд/мин, 5 мин» */
+const PAT_KEYS = {
+  thirds: 'patThirds',
+  fourths: 'patFourths',
+  groups3: 'patGroups3',
+  groups4: 'patGroups4',
+  triads: 'patTriads',
+} as const
+
 export function describeItem(
   it: TaskItem,
   s: (typeof TASK)['ru'],
@@ -140,6 +148,9 @@ export function describeItem(
   switch (it.k) {
     case 'scale': {
       const parts = [`${s.scale}: ${tonicName(it.tonic, it.type)} ${t[it.type].toLowerCase()}`, `${it.octaves} ${t.octShort}`, `${it.bpm} ${t.bpm}`]
+      // упражнение поверх гаммы (терции, группы…) — ученик должен видеть, что именно играть
+      const pat = PAT_KEYS[it.pattern as keyof typeof PAT_KEYS]
+      if (pat) parts.splice(1, 0, t[pat].toLowerCase())
       if (it.min) parts.push(`${it.min} ${t.minShort}`)
       return parts.join(', ')
     }

@@ -4,7 +4,7 @@ import { NOTES, type SaxNote } from '../data/notes'
 import { pick, type Lang, type STRINGS } from '../lib/i18n'
 import { TASK } from '../lib/i18n/task'
 import { usePersisted } from '../lib/persist'
-import { SCALE_TYPES, TONIC_NAMES, type ScaleType } from '../lib/scales'
+import { PATTERNS, SCALE_TYPES, TONIC_NAMES, type Pattern, type ScaleType } from '../lib/scales'
 import type { Instrument } from '../lib/sound'
 import { MAX_ITEMS, TASK_KINDS, taskUrl, type Task, type TaskItem, type TaskKind } from '../lib/task'
 
@@ -174,6 +174,15 @@ export default function TaskBuilder({ onClose, lang, t, nameOf, currentNoteId, m
               <select value={it.octaves} onChange={(e) => patch(i, { octaves: e.target.value === '2' ? 2 : 1 })} className={FIELD}>
                 <option value={1}>1</option>
                 <option value={2}>2</option>
+              </select>
+            </Field>
+            <Field label={t.patternLabel}>
+              <select value={it.pattern ?? 'plain'} onChange={(e) => patch(i, { pattern: e.target.value as Pattern })} className={FIELD}>
+                {PATTERNS.map((p) => (
+                  <option key={p} value={p}>
+                    {{ plain: t.patPlain, thirds: t.patThirds, fourths: t.patFourths, groups3: t.patGroups3, groups4: t.patGroups4, triads: t.patTriads }[p]}
+                  </option>
+                ))}
               </select>
             </Field>
             <Num label={t.bpm} value={it.bpm} lo={20} hi={300} set={(v) => patch(i, { bpm: v })} />
