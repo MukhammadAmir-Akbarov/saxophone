@@ -31,14 +31,14 @@ const QUIZ_KINDS = [
 ] as const
 
 const FIELD =
-  'h-10 rounded-lg border border-[#4a3b22] bg-[#14100a] px-2 text-sm font-semibold text-[#e8d5ae] focus-visible:outline-2 focus-visible:outline-[#f2c14e]'
+  'h-10 rounded-lg border border-[var(--c-4a3b22)] bg-[var(--c-14100a)] px-2 text-sm font-semibold text-[var(--c-e8d5ae)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]'
 const BTN =
-  'flex h-10 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[#4a3b22] px-2 text-sm font-semibold text-[#e8d5ae] transition-colors hover:bg-[#241c11] hover:text-[#f2c14e] focus-visible:outline-2 focus-visible:outline-[#f2c14e] disabled:cursor-not-allowed disabled:opacity-40'
+  'flex h-10 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--c-4a3b22)] px-2 text-sm font-semibold text-[var(--c-e8d5ae)] transition-colors hover:bg-[var(--c-241c11)] hover:text-[var(--c-f2c14e)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] disabled:cursor-not-allowed disabled:opacity-40'
 const PRIMARY =
-  'flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-gradient-to-br from-[#f6d98a] to-[#c8922e] px-3 text-sm font-semibold text-[#241a08] focus-visible:outline-2 focus-visible:outline-[#f2c14e]'
+  'flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-gradient-to-br from-[var(--c-f6d98a)] to-[var(--c-c8922e)] px-3 text-sm font-semibold text-[var(--c-241a08)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]'
 
 const Field = ({ label, children }: { label: string; children: ReactNode }) => (
-  <label className="flex flex-col gap-1 text-xs text-[#a08c64]">
+  <label className="flex flex-col gap-1 text-xs text-[var(--c-a08c64)]">
     {label}
     {children}
   </label>
@@ -228,11 +228,11 @@ export default function TaskBuilder({ onClose, lang, t, nameOf, currentNoteId, m
       aria-label={s.builderTitle}
     >
       <div
-        className="max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-[#3a2f1c] bg-[#1c1610] p-5 shadow-2xl"
+        className="max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-[var(--c-3a2f1c)] bg-[var(--c-1c1610)] p-5 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-xl text-[#f2e3c2]">{s.builderTitle}</h2>
+          <h2 className="font-display text-xl text-[var(--c-f2e3c2)]">{s.builderTitle}</h2>
           <button ref={closeRef} onClick={onClose} aria-label={t.close} className={`${BTN} rounded-full`}>
             <X size={20} />
           </button>
@@ -261,9 +261,9 @@ export default function TaskBuilder({ onClose, lang, t, nameOf, currentNoteId, m
 
         <ol className="mt-4 flex flex-col gap-2">
           {items.map((it, i) => (
-            <li key={i} className="rounded-xl border border-[#2e2415] bg-[#14100a] p-2">
+            <li key={i} className="rounded-xl border border-[var(--c-2e2415)] bg-[var(--c-14100a)] p-2">
               <div className="mb-2 flex items-center gap-1">
-                <span className="flex-1 text-sm font-semibold text-[#f2c14e]">
+                <span className="flex-1 text-sm font-semibold text-[var(--c-f2c14e)]">
                   {i + 1}. {s[it.k]}
                 </span>
                 <button onClick={() => move(i, -1)} disabled={i === 0} aria-label={s.up} className={BTN}>
@@ -272,7 +272,7 @@ export default function TaskBuilder({ onClose, lang, t, nameOf, currentNoteId, m
                 <button onClick={() => move(i, 1)} disabled={i === items.length - 1} aria-label={s.down} className={BTN}>
                   <ArrowDown size={16} />
                 </button>
-                <button onClick={() => setItems(items.filter((_, j) => j !== i))} aria-label={s.remove} className={`${BTN} hover:text-[#ff8a78]`}>
+                <button onClick={() => setItems(items.filter((_, j) => j !== i))} aria-label={s.remove} className={`${BTN} hover:text-[var(--c-ff8a78)]`}>
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -281,7 +281,7 @@ export default function TaskBuilder({ onClose, lang, t, nameOf, currentNoteId, m
           ))}
         </ol>
 
-        <div className="mt-3 text-xs text-[#a08c64]">{s.add}</div>
+        <div className="mt-3 text-xs text-[var(--c-a08c64)]">{s.add}</div>
         <div className="mt-1 flex flex-wrap gap-2">
           {TASK_KINDS.map((k) => (
             <button key={k} onClick={() => setItems([...items, fresh(k)])} disabled={!canAdd(k)} className={BTN}>
@@ -289,9 +289,9 @@ export default function TaskBuilder({ onClose, lang, t, nameOf, currentNoteId, m
             </button>
           ))}
         </div>
-        {items.length >= MAX_ITEMS && <p className="mt-2 text-xs text-[#ff8a78]">{s.tooMany}</p>}
+        {items.length >= MAX_ITEMS && <p className="mt-2 text-xs text-[var(--c-ff8a78)]">{s.tooMany}</p>}
 
-        <div className="mt-4 border-t border-[#2e2415] pt-3">
+        <div className="mt-4 border-t border-[var(--c-2e2415)] pt-3">
           {url ? (
             <>
               <Field label={s.link}>
@@ -323,7 +323,7 @@ export default function TaskBuilder({ onClose, lang, t, nameOf, currentNoteId, m
               </div>
             </>
           ) : (
-            <p className="text-sm text-[#a08c64]">{s.empty}</p>
+            <p className="text-sm text-[var(--c-a08c64)]">{s.empty}</p>
           )}
         </div>
       </div>

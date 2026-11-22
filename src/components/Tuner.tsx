@@ -1,3 +1,4 @@
+import { col } from '../lib/theme'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Play, RotateCcw, SkipForward, X } from 'lucide-react'
 import { NOTES, type SaxNote } from '../data/notes'
@@ -68,7 +69,7 @@ function drawGraph(cv: HTMLCanvasElement, hist: Array<{ t: number; c: number | n
   // зелёная полоса «точно»
   g.fillStyle = 'rgba(95,210,122,0.14)'
   g.fillRect(0, y(IN_TUNE), w, y(-IN_TUNE) - y(IN_TUNE))
-  g.strokeStyle = '#4a3b22'
+  g.strokeStyle = col('4a3b22')
   g.lineWidth = 1
   g.beginPath()
   g.moveTo(0, h / 2)
@@ -87,7 +88,7 @@ function drawGraph(cv: HTMLCanvasElement, hist: Array<{ t: number; c: number | n
     }
     if (!drawing) {
       g.beginPath()
-      g.strokeStyle = Math.abs(p.c) <= IN_TUNE ? '#5fd27a' : '#f2c14e'
+      g.strokeStyle = Math.abs(p.c) <= IN_TUNE ? col('5fd27a') : col('f2c14e')
       g.moveTo(x, y(p.c))
       drawing = true
     } else {
@@ -97,7 +98,7 @@ function drawGraph(cv: HTMLCanvasElement, hist: Array<{ t: number; c: number | n
         g.lineTo(x, y(p.c))
         g.stroke()
         g.beginPath()
-        g.strokeStyle = inside ? '#5fd27a' : '#f2c14e'
+        g.strokeStyle = inside ? col('5fd27a') : col('f2c14e')
         g.moveTo(x, y(p.c))
       } else g.lineTo(x, y(p.c))
     }
@@ -295,10 +296,10 @@ export default function Tuner({ onClose, instrument, sharp, note, nameOf, tab, o
       <>
         {t.silence}
         <br />
-        <span className="text-[#a08c64]">{t.tunerHint}</span>
+        <span className="text-[var(--c-a08c64)]">{t.tunerHint}</span>
       </>
     ) : inTune ? (
-      <span className="font-semibold text-[#5fd27a]">✓ {t.inTune}</span>
+      <span className="font-semibold text-[var(--c-5fd27a)]">✓ {t.inTune}</span>
     ) : onTarget ? (
       <>
         {Math.abs(centsFromNearest)} {t.cents} {centsFromNearest < 0 ? t.flat : t.sharp}
@@ -325,19 +326,19 @@ export default function Tuner({ onClose, instrument, sharp, note, nameOf, tab, o
       aria-label={t.tuner}
     >
       <div
-        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-[#3a2f1c] bg-[#1c1610] p-5 shadow-2xl"
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-[var(--c-3a2f1c)] bg-[var(--c-1c1610)] p-5 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between gap-2">
-          <div className="flex rounded-xl border border-[#4a3b22] p-0.5" role="tablist">
+          <div className="flex rounded-xl border border-[var(--c-4a3b22)] p-0.5" role="tablist">
             {TABS.map(([id, label]) => (
               <button
                 key={id}
                 role="tab"
                 aria-selected={tab === id}
                 onClick={() => switchTab(id)}
-                className={`h-9 cursor-pointer rounded-[10px] px-2.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[#f2c14e] ${
-                  tab === id ? 'bg-gradient-to-br from-[#f6d98a] to-[#c8922e] text-[#241a08]' : 'text-[#c9b892] hover:text-[#f2c14e]'
+                className={`h-9 cursor-pointer rounded-[10px] px-2.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] ${
+                  tab === id ? 'bg-gradient-to-br from-[var(--c-f6d98a)] to-[var(--c-c8922e)] text-[var(--c-241a08)]' : 'text-[var(--c-c9b892)] hover:text-[var(--c-f2c14e)]'
                 }`}
               >
                 {label}
@@ -348,17 +349,17 @@ export default function Tuner({ onClose, instrument, sharp, note, nameOf, tab, o
             ref={closeRef}
             onClick={onClose}
             aria-label={t.close}
-            className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#4a3b22] text-[#d9c9a8] transition-colors hover:bg-[#2a2115] hover:text-[#f2c14e] focus-visible:outline-2 focus-visible:outline-[#f2c14e]"
+            className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--c-4a3b22)] text-[var(--c-d9c9a8)] transition-colors hover:bg-[var(--c-2a2115)] hover:text-[var(--c-f2c14e)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
           >
             <X size={20} />
           </button>
         </div>
 
         {denied ? (
-          <p className="py-8 text-center text-sm text-[#ff8a78]">{t.micDenied}</p>
+          <p className="py-8 text-center text-sm text-[var(--c-ff8a78)]">{t.micDenied}</p>
         ) : (
           <>
-            <div className="text-center text-sm text-[#a08c64]">
+            <div className="text-center text-sm text-[var(--c-a08c64)]">
               {tab === 'follow' ? (
                 fIdx === null ? (
                   t.followIntro
@@ -366,19 +367,19 @@ export default function Tuner({ onClose, instrument, sharp, note, nameOf, tab, o
                   <>
                     {fPhase === 'playing' ? t.followListen : fPhase === 'done' ? t.correct : t.followYourTurn}
                     {': '}
-                    <span className="font-semibold text-[#e8d5ae]">{showFollowName ? targetName : '?'}</span>
+                    <span className="font-semibold text-[var(--c-e8d5ae)]">{showFollowName ? targetName : '?'}</span>
                   </>
                 )
               ) : (
                 <>
-                  {t.target}: <span className="font-semibold text-[#e8d5ae]">{targetName}</span> · {t[instrument]}
+                  {t.target}: <span className="font-semibold text-[var(--c-e8d5ae)]">{targetName}</span> · {t[instrument]}
                 </>
               )}
             </div>
 
             <div
               className={`font-display mt-3 text-center text-6xl leading-none transition-colors ${
-                heard === null ? 'text-[#5c4c2e]' : inTune ? 'text-[#5fd27a]' : 'text-[#f2c14e]'
+                heard === null ? 'text-[var(--c-5c4c2e)]' : inTune ? 'text-[var(--c-5fd27a)]' : 'text-[var(--c-f2c14e)]'
               }`}
             >
               {nearest === null ? '—' : midiName(nearest, sharp)}
@@ -386,54 +387,54 @@ export default function Tuner({ onClose, instrument, sharp, note, nameOf, tab, o
 
             {/* шкала центов */}
             <div className="relative mx-auto mt-5 h-8 w-full max-w-xs">
-              <div className="absolute top-1/2 h-1 w-full -translate-y-1/2 rounded bg-[#3a2f1c]" />
+              <div className="absolute top-1/2 h-1 w-full -translate-y-1/2 rounded bg-[var(--c-3a2f1c)]" />
               <div
-                className="absolute top-1/2 h-3 -translate-y-1/2 rounded bg-[#1f4a29]"
+                className="absolute top-1/2 h-3 -translate-y-1/2 rounded bg-[var(--c-1f4a29)]"
                 style={{ left: `${50 - IN_TUNE}%`, width: `${IN_TUNE * 2}%` }}
               />
-              <div className="absolute top-0 left-1/2 h-full w-0.5 -translate-x-1/2 bg-[#7a6845]" />
+              <div className="absolute top-0 left-1/2 h-full w-0.5 -translate-x-1/2 bg-[var(--c-7a6845)]" />
               {heard !== null && (
                 <div
                   className={`absolute top-0 h-full w-1.5 -translate-x-1/2 rounded-full transition-[left] duration-100 ${
-                    Math.abs(needle) <= IN_TUNE ? 'bg-[#5fd27a]' : 'bg-[#f2c14e]'
+                    Math.abs(needle) <= IN_TUNE ? 'bg-[var(--c-5fd27a)]' : 'bg-[var(--c-f2c14e)]'
                   }`}
                   style={{ left: `${50 + needle}%` }}
                 />
               )}
-              <span className="absolute -bottom-4 left-0 text-[10px] text-[#7a6845]">−50</span>
-              <span className="absolute -bottom-4 right-0 text-[10px] text-[#7a6845]">+50</span>
+              <span className="absolute -bottom-4 left-0 text-[10px] text-[var(--c-7a6845)]">−50</span>
+              <span className="absolute -bottom-4 right-0 text-[10px] text-[var(--c-7a6845)]">+50</span>
             </div>
 
             {/* график высоты */}
             <canvas
               ref={canvasRef}
-              className="mt-6 h-24 w-full rounded-lg border border-[#2e2415] bg-[#14100a]"
+              className="mt-6 h-24 w-full rounded-lg border border-[var(--c-2e2415)] bg-[var(--c-14100a)]"
               aria-label={t.graphLabel}
               role="img"
             />
 
-            {tab === 'tuner' && <p className="mt-3 min-h-10 text-center text-sm text-[#c9b892]">{deviation}</p>}
+            {tab === 'tuner' && <p className="mt-3 min-h-10 text-center text-sm text-[var(--c-c9b892)]">{deviation}</p>}
 
             {tab === 'long' && (
-              <div className="mt-3 text-center text-sm text-[#c9b892]">
-                <div className="font-display text-3xl text-[#f2c14e]" aria-live="off">
+              <div className="mt-3 text-center text-sm text-[var(--c-c9b892)]">
+                <div className="font-display text-3xl text-[var(--c-f2c14e)]" aria-live="off">
                   {holdSec > 0 ? `${holdSec.toFixed(1)} ${t.sec}` : '—'}
                 </div>
-                <p className="mt-1 text-xs text-[#a08c64]">{t.longHint}</p>
+                <p className="mt-1 text-xs text-[var(--c-a08c64)]">{t.longHint}</p>
                 {lastHold && (
                   <p className="mt-2" role="status">
-                    {t.lastTone}: <b className="text-[#e8d5ae]">{lastHold.sec.toFixed(1)} {t.sec}</b> · {t.avgDev}{' '}
-                    <b className="text-[#e8d5ae]">
+                    {t.lastTone}: <b className="text-[var(--c-e8d5ae)]">{lastHold.sec.toFixed(1)} {t.sec}</b> · {t.avgDev}{' '}
+                    <b className="text-[var(--c-e8d5ae)]">
                       {lastHold.avg > 0 ? '+' : ''}
                       {Math.round(lastHold.avg)}
                     </b>{' '}
                     · {t.spread}{' '}
-                    <b className={lastHold.spread <= 8 ? 'text-[#5fd27a]' : 'text-[#e8d5ae]'}>±{Math.round(lastHold.spread)}</b>{' '}
+                    <b className={lastHold.spread <= 8 ? 'text-[var(--c-5fd27a)]' : 'text-[var(--c-e8d5ae)]'}>±{Math.round(lastHold.spread)}</b>{' '}
                     {t.cents}
                   </p>
                 )}
                 {bestHold > 0 && (
-                  <p className="mt-1 text-xs text-[#a08c64]">
+                  <p className="mt-1 text-xs text-[var(--c-a08c64)]">
                     {t.best}: {bestHold.toFixed(1)} {t.sec}
                   </p>
                 )}
@@ -441,12 +442,12 @@ export default function Tuner({ onClose, instrument, sharp, note, nameOf, tab, o
             )}
 
             {tab === 'follow' && (
-              <div className="mt-3 space-y-3 text-center text-sm text-[#c9b892]">
+              <div className="mt-3 space-y-3 text-center text-sm text-[var(--c-c9b892)]">
                 <p className="min-h-5" aria-live="polite">
                   {fPhase === 'done' ? (
-                    <span className="font-semibold text-[#5fd27a]">✓ {t.correct}</span>
+                    <span className="font-semibold text-[var(--c-5fd27a)]">✓ {t.correct}</span>
                   ) : fPhase === 'listen' && fWrong !== null ? (
-                    <span className="text-[#ff8a78]">
+                    <span className="text-[var(--c-ff8a78)]">
                       {t.followWrong} {midiName(fWrong, sharp)} — {fWrong < targetMidi ? t.goHigher : t.goLower}
                     </span>
                   ) : fPhase === 'listen' && onTarget && !inTune ? (
@@ -459,7 +460,7 @@ export default function Tuner({ onClose, instrument, sharp, note, nameOf, tab, o
                   {fIdx === null ? (
                     <button
                       onClick={() => nextFollow()}
-                      className="flex h-11 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-gradient-to-br from-[#f6d98a] to-[#c8922e] font-semibold text-[#241a08] hover:brightness-110"
+                      className="flex h-11 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-gradient-to-br from-[var(--c-f6d98a)] to-[var(--c-c8922e)] font-semibold text-[var(--c-241a08)] hover:brightness-110"
                     >
                       <Play size={18} /> {t.start}
                     </button>
@@ -467,7 +468,7 @@ export default function Tuner({ onClose, instrument, sharp, note, nameOf, tab, o
                     <>
                       <button
                         onClick={() => nextFollow(true)}
-                        className="flex h-11 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[#4a3b22] font-semibold text-[#e8d5ae] hover:bg-[#241c11]"
+                        className="flex h-11 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--c-4a3b22)] font-semibold text-[var(--c-e8d5ae)] hover:bg-[var(--c-241c11)]"
                       >
                         <RotateCcw size={16} /> {t.replay}
                       </button>
@@ -476,16 +477,16 @@ export default function Tuner({ onClose, instrument, sharp, note, nameOf, tab, o
                           if (fPhase !== 'done') setFScore((s) => ({ ...s, total: s.total + 1 }))
                           nextFollow()
                         }}
-                        className="flex h-11 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[#4a3b22] font-semibold text-[#e8d5ae] hover:bg-[#241c11]"
+                        className="flex h-11 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--c-4a3b22)] font-semibold text-[var(--c-e8d5ae)] hover:bg-[var(--c-241c11)]"
                       >
                         <SkipForward size={16} /> {t.skip}
                       </button>
                     </>
                   )}
                 </div>
-                <div className="flex items-center justify-between text-xs text-[#a08c64]">
+                <div className="flex items-center justify-between text-xs text-[var(--c-a08c64)]">
                   <span>
-                    {t.score}: <b className="text-[#f2c14e]">{fScore.right}/{fScore.total}</b>
+                    {t.score}: <b className="text-[var(--c-f2c14e)]">{fScore.right}/{fScore.total}</b>
                   </span>
                   <label className="flex cursor-pointer items-center gap-2">
                     <input
@@ -495,7 +496,7 @@ export default function Tuner({ onClose, instrument, sharp, note, nameOf, tab, o
                         setHideName(e.target.checked)
                         writeNum('followHide', e.target.checked ? 1 : 0)
                       }}
-                      className="h-4 w-4 accent-[#d9a441]"
+                      className="h-4 w-4 accent-[var(--c-d9a441)]"
                     />
                     {t.byEar}
                   </label>

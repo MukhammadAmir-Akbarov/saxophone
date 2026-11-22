@@ -104,9 +104,9 @@ interface InstallEvent extends Event {
 // Базовая форма кнопки отдельно от цвета: если склеить «тёмную» и «золотую»
 // раскраску в одной строке классов, Tailwind берёт не ту, что задумана, и текст пропадает.
 const BTN_BASE =
-  'flex h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[#f2c14e]'
-const BTN = `${BTN_BASE} border border-[#4a3b22] text-[#e8d5ae] hover:bg-[#241c11] hover:text-[#f2c14e]`
-const BTN_ON = 'bg-gradient-to-br from-[#f6d98a] to-[#c8922e] text-[#241a08]'
+  'flex h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]'
+const BTN = `${BTN_BASE} border border-[var(--c-4a3b22)] text-[var(--c-e8d5ae)] hover:bg-[var(--c-241c11)] hover:text-[var(--c-f2c14e)]`
+const BTN_ON = 'bg-gradient-to-br from-[var(--c-f6d98a)] to-[var(--c-c8922e)] text-[var(--c-241a08)]'
 const BTN_PRIMARY = `${BTN_BASE} border border-transparent ${BTN_ON} hover:brightness-110`
 
 export default function Home() {
@@ -556,15 +556,15 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#14100a] text-[#f0e6d2]">
+    <div className="flex min-h-dvh flex-col bg-[var(--c-14100a)] text-[var(--c-f0e6d2)]">
       {/* шапка */}
-      <header className="border-b border-[#2e2415] px-4 py-3 sm:px-6">
+      <header className="border-b border-[var(--c-2e2415)] px-4 py-3 sm:px-6">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <img src="img/icon.svg" alt="" className="h-11 w-11 shrink-0 rounded-lg border border-[#3a2f1c]" />
+            <img src="img/icon.svg" alt="" className="h-11 w-11 shrink-0 rounded-lg border border-[var(--c-3a2f1c)]" />
             <div className="min-w-0">
-              <h1 className="font-display text-lg leading-tight text-[#f5e8cd] sm:text-xl">{t.title}</h1>
-              <p className="truncate text-xs text-[#a08c64]">{t.subtitle}</p>
+              <h1 className="font-display text-lg leading-tight text-[var(--c-f5e8cd)] sm:text-xl">{t.title}</h1>
+              <p className="truncate text-xs text-[var(--c-a08c64)]">{t.subtitle}</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -592,7 +592,7 @@ export default function Home() {
 
         {/* панель режимов и настроек */}
         <div className="mx-auto mt-3 flex max-w-5xl flex-wrap items-center gap-2">
-          <div className="flex max-w-full overflow-x-auto rounded-xl border border-[#4a3b22] p-0.5" role="tablist">
+          <div className="flex max-w-full overflow-x-auto rounded-xl border border-[var(--c-4a3b22)] p-0.5" role="tablist">
             {MODES.map((m) => (
               <button
                 key={m}
@@ -604,8 +604,8 @@ export default function Home() {
                   setVariant(0)
                   if (m === 'quiz' && mode !== 'quiz') nextQuestion()
                 }}
-                className={`h-10 shrink-0 cursor-pointer rounded-[10px] px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[#f2c14e] ${
-                  mode === m ? BTN_ON : 'text-[#c9b892] hover:text-[#f2c14e]'
+                className={`h-10 shrink-0 cursor-pointer rounded-[10px] px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] ${
+                  mode === m ? BTN_ON : 'text-[var(--c-c9b892)] hover:text-[var(--c-f2c14e)]'
                 }`}
               >
                 {{ table: t.modeTable, quiz: t.modeQuiz, scales: t.modeScales, melodies: t.modeMelodies, trills: t.modeTrills }[m]}
@@ -619,7 +619,7 @@ export default function Home() {
             id="instrument"
             value={instrument}
             onChange={(e) => setInstrument(e.target.value as Instrument)}
-            className="h-11 cursor-pointer rounded-xl border border-[#4a3b22] bg-[#14100a] px-2 text-sm font-semibold text-[#e8d5ae] focus-visible:outline-2 focus-visible:outline-[#f2c14e]"
+            className="h-11 cursor-pointer rounded-xl border border-[var(--c-4a3b22)] bg-[var(--c-14100a)] px-2 text-sm font-semibold text-[var(--c-e8d5ae)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
           >
             {INSTRUMENTS.map((i) => (
               <option key={i} value={i}>
@@ -673,7 +673,7 @@ export default function Home() {
             {moreOpen && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setMoreOpen(false)} aria-hidden="true" />
-                <div role="menu" className="absolute right-0 z-40 mt-1 w-56 rounded-xl border border-[#3a2f1c] bg-[#1c1610] p-1 shadow-2xl">
+                <div role="menu" className="absolute right-0 z-40 mt-1 w-56 rounded-xl border border-[var(--c-3a2f1c)] bg-[var(--c-1c1610)] p-1 shadow-2xl">
                   {(
                     [
                       [Mic2, t.recTitle, () => setRecOpen(true)],
@@ -688,7 +688,7 @@ export default function Home() {
                         setMoreOpen(false)
                         act()
                       }}
-                      className="flex h-11 w-full cursor-pointer items-center gap-2 rounded-lg px-3 text-left text-sm font-semibold text-[#e8d5ae] hover:bg-[#241c11] hover:text-[#f2c14e] focus-visible:outline-2 focus-visible:outline-[#f2c14e]"
+                      className="flex h-11 w-full cursor-pointer items-center gap-2 rounded-lg px-3 text-left text-sm font-semibold text-[var(--c-e8d5ae)] hover:bg-[var(--c-241c11)] hover:text-[var(--c-f2c14e)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
                     >
                       <Icon size={18} /> {label}
                     </button>
@@ -725,7 +725,7 @@ export default function Home() {
       ) : (
       <main className="mx-auto grid w-full max-w-5xl flex-1 grid-cols-1 items-start gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[1fr_340px]">
         {/* схема клапанов */}
-        <section className="order-2 flex flex-col items-center gap-3 rounded-2xl border border-[#2e2415] bg-[#1a1509] p-4 lg:order-1">
+        <section className="order-2 flex flex-col items-center gap-3 rounded-2xl border border-[var(--c-2e2415)] bg-[var(--c-1a1509)] p-4 lg:order-1">
           {mode === 'table' && note.alts && note.alts.length > 0 && (
             <div className="flex flex-wrap justify-center gap-1.5" role="group" aria-label={t.variants}>
               {[t.main, ...note.alts.map((a) => altName(a.name, lang))].map((label, vi) => (
@@ -733,8 +733,8 @@ export default function Home() {
                   key={vi}
                   onClick={() => setVariant(vi)}
                   aria-pressed={variant === vi}
-                  className={`h-10 cursor-pointer rounded-lg px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[#f2c14e] ${
-                    variant === vi ? BTN_ON : 'border border-[#3a2f1c] text-[#c9b892] hover:border-[#6b5732] hover:text-[#f2c14e]'
+                  className={`h-10 cursor-pointer rounded-lg px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] ${
+                    variant === vi ? BTN_ON : 'border border-[var(--c-3a2f1c)] text-[var(--c-c9b892)] hover:border-[var(--c-6b5732)] hover:text-[var(--c-f2c14e)]'
                   }`}
                 >
                   {label}
@@ -742,7 +742,7 @@ export default function Home() {
               ))}
             </div>
           )}
-          {mode === 'quiz' && !choiceKind && !answered && <p className="text-sm text-[#a08c64]">{t.quizTap}</p>}
+          {mode === 'quiz' && !choiceKind && !answered && <p className="text-sm text-[var(--c-a08c64)]">{t.quizTap}</p>}
           <FingeringDiagram
             pressed={diagramPressed}
             onToggle={mode === 'quiz' && !choiceKind && !answered ? toggleKey : undefined}
@@ -751,14 +751,14 @@ export default function Home() {
             bisLabel={t.bis}
             label={t.legendTitle}
           />
-          <p className="min-h-5 text-center text-sm text-[#a08c64]" aria-live="polite">
+          <p className="min-h-5 text-center text-sm text-[var(--c-a08c64)]" aria-live="polite">
             {mode === 'quiz' && result && 'ok' in result && !result.ok ? (
-              <span className="text-[#ff8a78]">
+              <span className="text-[var(--c-ff8a78)]">
                 {t.wrong}
                 {result.missing.size > 0 && (
                   <>
                     {' · '}
-                    <span className="text-[#5fd27a]">
+                    <span className="text-[var(--c-5fd27a)]">
                       {t.missing}: {result.missing.size}
                     </span>
                   </>
@@ -772,7 +772,7 @@ export default function Home() {
               </span>
             ) : (mode === 'quiz' && !answered && !(choiceKind && quizKind === 'name')) ? null : shownKeys.length > 0 ? (
               <>
-                {t.pressed}: <span className="font-semibold text-[#e8d5ae]">{shownKeys.map(kl).join(' · ')}</span>
+                {t.pressed}: <span className="font-semibold text-[var(--c-e8d5ae)]">{shownKeys.map(kl).join(' · ')}</span>
               </>
             ) : (
               t.allOpen
@@ -782,10 +782,10 @@ export default function Home() {
 
         {/* карточка ноты */}
         <section className="order-1 lg:order-2">
-          <div className="rounded-2xl border border-[#2e2415] bg-[#1a1509] p-4">
+          <div className="rounded-2xl border border-[var(--c-2e2415)] bg-[var(--c-1a1509)] p-4">
             {mode === 'quiz' && (
               <>
-                <div className="mb-3 flex rounded-xl border border-[#4a3b22] p-0.5" role="tablist" aria-label={t.modeQuiz}>
+                <div className="mb-3 flex rounded-xl border border-[var(--c-4a3b22)] p-0.5" role="tablist" aria-label={t.modeQuiz}>
                   {(['fingering', 'name', 'ear'] as const).map((k) => (
                     <button
                       key={k}
@@ -796,26 +796,26 @@ export default function Home() {
                         setQuizKind(k)
                         nextQuestion(k)
                       }}
-                      className={`h-9 flex-1 cursor-pointer rounded-[10px] px-2 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[#f2c14e] sm:text-sm ${
-                        quizKind === k ? BTN_ON : 'text-[#c9b892] hover:text-[#f2c14e]'
+                      className={`h-9 flex-1 cursor-pointer rounded-[10px] px-2 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] sm:text-sm ${
+                        quizKind === k ? BTN_ON : 'text-[var(--c-c9b892)] hover:text-[var(--c-f2c14e)]'
                       }`}
                     >
                       {k === 'fingering' ? t.kindFingering : k === 'name' ? t.kindName : t.kindEar}
                     </button>
                   ))}
                 </div>
-                <div className="mb-2 text-sm text-[#a08c64]">
+                <div className="mb-2 text-sm text-[var(--c-a08c64)]">
                   {quizKind === 'fingering' ? t.quizPrompt : quizKind === 'name' ? t.quizNamePrompt : t.quizEarPrompt}
                 </div>
               </>
             )}
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="font-display text-5xl leading-none text-[#f2c14e]">{hideAnswer ? '?' : displayName}</div>
+                <div className="font-display text-5xl leading-none text-[var(--c-f2c14e)]">{hideAnswer ? '?' : displayName}</div>
                 {!hideAnswer && (
                   <>
                     <div className="mt-2 flex items-center gap-2">
-                      <span className="inline-block rounded-full border border-[#4a3b22] px-2.5 py-0.5 text-xs text-[#c9b892]">
+                      <span className="inline-block rounded-full border border-[var(--c-4a3b22)] px-2.5 py-0.5 text-xs text-[var(--c-c9b892)]">
                         {t[note.register]}
                       </span>
                       {mode === 'table' && (
@@ -823,22 +823,22 @@ export default function Home() {
                           onClick={share}
                           aria-label={t.share}
                           title={t.share}
-                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-[#4a3b22] text-[#c9b892] hover:text-[#f2c14e] focus-visible:outline-2 focus-visible:outline-[#f2c14e]"
+                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-[var(--c-4a3b22)] text-[var(--c-c9b892)] hover:text-[var(--c-f2c14e)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
                         >
                           <Link2 size={15} />
                         </button>
                       )}
                     </div>
-                    <div className="mt-2 text-xs text-[#a08c64]">
-                      {t.written} {displayName} · {t.sounds} <span className="font-semibold text-[#e8d5ae]">{concert}</span>
+                    <div className="mt-2 text-xs text-[var(--c-a08c64)]">
+                      {t.written} {displayName} · {t.sounds} <span className="font-semibold text-[var(--c-e8d5ae)]">{concert}</span>
                     </div>
                   </>
                 )}
                 {mode === 'table' && note.hint && variant === 0 && (
-                  <div className="mt-1 text-xs text-[#a08c64]">{hintText(note, lang)}</div>
+                  <div className="mt-1 text-xs text-[var(--c-a08c64)]">{hintText(note, lang)}</div>
                 )}
                 {mode === 'table' && variant > 0 && note.alts?.[variant - 1] && (
-                  <div className="mt-1 text-xs text-[#a08c64]">
+                  <div className="mt-1 text-xs text-[var(--c-a08c64)]">
                     {t.variant}: {altName(note.alts[variant - 1].name, lang)}
                   </div>
                 )}
@@ -847,12 +847,12 @@ export default function Home() {
                 <button
                   onClick={() => play()}
                   aria-label={hideAnswer ? t.playAgain : `${t.listen} ${displayName}`}
-                  className="flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-gradient-to-br from-[#f6d98a] to-[#c8922e] text-[#241a08] shadow-[0_0_18px_rgba(217,164,65,0.35)] transition-all hover:scale-105 focus-visible:outline-2 focus-visible:outline-[#f2c14e] active:scale-95"
+                  className="flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-gradient-to-br from-[var(--c-f6d98a)] to-[var(--c-c8922e)] text-[var(--c-241a08)] shadow-[0_0_18px_rgba(217,164,65,0.35)] transition-all hover:scale-105 focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] active:scale-95"
                 >
                   <Volume2 size={26} />
                 </button>
                 {!hideAnswer && ((!note.sound && !own.has(note.id)) || longTone) && (
-                  <span className="text-center text-[10px] leading-tight text-[#7a6845]">{t.synth}</span>
+                  <span className="text-center text-[10px] leading-tight text-[var(--c-7a6845)]">{t.synth}</span>
                 )}
               </div>
             </div>
@@ -862,7 +862,7 @@ export default function Home() {
               <div className="mt-4 grid grid-cols-2 gap-2">
                 {options.map((i, k) => (
                   <button key={i} onClick={() => choose(i)} className={`${BTN} h-14 text-lg`}>
-                    <span className="text-xs text-[#7a6845]">{k + 1}</span> {nameOf(NOTES[i])}
+                    <span className="text-xs text-[var(--c-7a6845)]">{k + 1}</span> {nameOf(NOTES[i])}
                   </button>
                 ))}
               </div>
@@ -902,7 +902,7 @@ export default function Home() {
                 {choiceKind && choice !== null && (
                   <div
                     className={`rounded-xl border px-3 py-2 text-center font-semibold ${
-                      choice === quizIdx ? 'border-[#2f6b3b] bg-[#16351c] text-[#5fd27a]' : 'border-[#6b2f2a] bg-[#351816] text-[#ff8a78]'
+                      choice === quizIdx ? 'border-[var(--c-2f6b3b)] bg-[var(--c-16351c)] text-[var(--c-5fd27a)]' : 'border-[var(--c-6b2f2a)] bg-[var(--c-351816)] text-[var(--c-ff8a78)]'
                     }`}
                     role="status"
                   >
@@ -910,7 +910,7 @@ export default function Home() {
                   </div>
                 )}
                 {!choiceKind && result && 'ok' in result && result.ok && (
-                  <div className="rounded-xl border border-[#2f6b3b] bg-[#16351c] px-3 py-2 text-center font-semibold text-[#5fd27a]" role="status">
+                  <div className="rounded-xl border border-[var(--c-2f6b3b)] bg-[var(--c-16351c)] px-3 py-2 text-center font-semibold text-[var(--c-5fd27a)]" role="status">
                     ✓ {t.correct}
                     {variant > 0 && note.alts?.[variant - 1] && (
                       <span className="block text-xs font-normal">
@@ -920,7 +920,7 @@ export default function Home() {
                   </div>
                 )}
                 {!choiceKind && result && 'revealed' in result && (
-                  <div className="rounded-xl border border-[#4a3b22] px-3 py-2 text-center text-sm text-[#c9b892]" role="status">
+                  <div className="rounded-xl border border-[var(--c-4a3b22)] px-3 py-2 text-center text-sm text-[var(--c-c9b892)]" role="status">
                     {t.revealed}
                   </div>
                 )}
@@ -946,7 +946,7 @@ export default function Home() {
                       setGuess(new Set())
                       setResult(null)
                     }}
-                    className="w-full cursor-pointer text-center text-xs text-[#a08c64] underline-offset-2 hover:text-[#f2c14e] hover:underline"
+                    className="w-full cursor-pointer text-center text-xs text-[var(--c-a08c64)] underline-offset-2 hover:text-[var(--c-f2c14e)] hover:underline"
                   >
                     {t.clear}
                   </button>
@@ -960,12 +960,12 @@ export default function Home() {
 
       {/* нижняя панель: лента нот в таблице, счёт в тренажёре (лента выдала бы ответ) */}
       {!FULL.includes(mode) && (
-      <footer className="sticky bottom-0 border-t border-[#2e2415] bg-[#14100a]/95 backdrop-blur-sm">
+      <footer className="sticky bottom-0 border-t border-[var(--c-2e2415)] bg-[color-mix(in_srgb,var(--c-14100a)_95%,transparent)] backdrop-blur-sm">
         {mode === 'table' ? (
           <div ref={railRef} className="mx-auto flex max-w-5xl items-center gap-1.5 overflow-x-auto px-4 py-3 sm:px-6">
             {rail.map((item, k) =>
               item.type === 'sep' ? (
-                <span key={`sep-${k}`} className="mx-1 shrink-0 text-[10px] font-semibold tracking-wider text-[#7a6845] uppercase">
+                <span key={`sep-${k}`} className="mx-1 shrink-0 text-[10px] font-semibold tracking-wider text-[var(--c-7a6845)] uppercase">
                   {t[item.reg]}
                 </span>
               ) : (
@@ -974,10 +974,10 @@ export default function Home() {
                   data-active={item.i === safeIndex}
                   onClick={() => select(item.i)}
                   aria-label={`${t.note} ${nameOf(item.note)}`}
-                  className={`h-11 min-w-11 shrink-0 cursor-pointer rounded-lg px-2 text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-[#f2c14e] ${
+                  className={`h-11 min-w-11 shrink-0 cursor-pointer rounded-lg px-2 text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] ${
                     item.i === safeIndex
                       ? `${BTN_ON} shadow-[0_0_12px_rgba(217,164,65,0.4)]`
-                      : 'border border-[#3a2f1c] text-[#c9b892] hover:border-[#6b5732] hover:text-[#f2c14e]'
+                      : 'border border-[var(--c-3a2f1c)] text-[var(--c-c9b892)] hover:border-[var(--c-6b5732)] hover:text-[var(--c-f2c14e)]'
                   }`}
                 >
                   {nameOf(item.note)}
@@ -987,39 +987,39 @@ export default function Home() {
           </div>
         ) : (
           <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm sm:px-6">
-            <div className="flex gap-4 text-[#c9b892]">
+            <div className="flex gap-4 text-[var(--c-c9b892)]">
               <span>
-                {t.score}: <b className="text-[#f2c14e]">{score.right}/{score.total}</b>
+                {t.score}: <b className="text-[var(--c-f2c14e)]">{score.right}/{score.total}</b>
               </span>
               <span>
-                {t.streak}: <b className="text-[#f2c14e]">{score.streak}</b>
+                {t.streak}: <b className="text-[var(--c-f2c14e)]">{score.streak}</b>
               </span>
               <span>
-                {t.best}: <b className="text-[#f2c14e]">{best}</b>
+                {t.best}: <b className="text-[var(--c-f2c14e)]">{best}</b>
               </span>
               {shownDays > 0 && (
                 <span title={t.days}>
-                  🔥 <b className="text-[#f2c14e]">{shownDays}</b> {t.days}
+                  🔥 <b className="text-[var(--c-f2c14e)]">{shownDays}</b> {t.days}
                 </span>
               )}
             </div>
             {weakNotes.length > 0 && (
-              <div className="flex items-center gap-2 text-[#c9b892]">
-                {t.weak}: <b className="text-[#ff8a78]">{weakNotes.map(nameOf).join(', ')}</b>
+              <div className="flex items-center gap-2 text-[var(--c-c9b892)]">
+                {t.weak}: <b className="text-[var(--c-ff8a78)]">{weakNotes.map(nameOf).join(', ')}</b>
                 <button
                   onClick={() => setMiss({})}
-                  className="cursor-pointer text-xs text-[#7a6845] underline-offset-2 hover:text-[#f2c14e] hover:underline"
+                  className="cursor-pointer text-xs text-[var(--c-7a6845)] underline-offset-2 hover:text-[var(--c-f2c14e)] hover:underline"
                 >
                   {t.resetStats}
                 </button>
               </div>
             )}
-            <label className="flex cursor-pointer items-center gap-2 text-[#c9b892]">
+            <label className="flex cursor-pointer items-center gap-2 text-[var(--c-c9b892)]">
               <input
                 type="checkbox"
                 checked={withAltissimo}
                 onChange={(e) => setWithAltissimo(e.target.checked)}
-                className="h-4 w-4 accent-[#d9a441]"
+                className="h-4 w-4 accent-[var(--c-d9a441)]"
               />
               {t.withAltissimo}
             </label>
@@ -1087,7 +1087,7 @@ export default function Home() {
       )}
       {toast && (
         <div
-          className="fixed bottom-24 left-1/2 z-50 max-w-[90vw] -translate-x-1/2 truncate rounded-xl border border-[#4a3b22] bg-[#241c11] px-4 py-2 text-sm text-[#e8d5ae] shadow-xl"
+          className="fixed bottom-24 left-1/2 z-50 max-w-[90vw] -translate-x-1/2 truncate rounded-xl border border-[var(--c-4a3b22)] bg-[var(--c-241c11)] px-4 py-2 text-sm text-[var(--c-e8d5ae)] shadow-xl"
           role="status"
         >
           {toast}

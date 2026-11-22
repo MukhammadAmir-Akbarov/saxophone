@@ -25,8 +25,8 @@ const STEP: Record<Speed, number> = { slow: 260, medium: 160, fast: 95 }
 const PAIRS = 8
 
 const BTN =
-  'flex h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[#4a3b22] px-3 text-sm font-semibold text-[#e8d5ae] transition-colors hover:bg-[#241c11] hover:text-[#f2c14e] focus-visible:outline-2 focus-visible:outline-[#f2c14e]'
-const ON = 'bg-gradient-to-br from-[#f6d98a] to-[#c8922e] text-[#241a08]'
+  'flex h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--c-4a3b22)] px-3 text-sm font-semibold text-[var(--c-e8d5ae)] transition-colors hover:bg-[var(--c-241c11)] hover:text-[var(--c-f2c14e)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]'
+const ON = 'bg-gradient-to-br from-[var(--c-f6d98a)] to-[var(--c-c8922e)] text-[var(--c-241a08)]'
 
 const byId = (id: string) => NOTES.find((n) => n.id === id)!
 
@@ -95,8 +95,8 @@ export default function Trills({ instrument, lang, t, sharp, initialId }: Props)
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 space-y-4 px-4 py-4 sm:px-6">
       <div>
-        <h2 className="font-display text-2xl text-[#f2c14e]">{s.title}</h2>
-        <p className="mt-1 text-sm text-[#a08c64]">{s.intro}</p>
+        <h2 className="font-display text-2xl text-[var(--c-f2c14e)]">{s.title}</h2>
+        <p className="mt-1 text-sm text-[var(--c-a08c64)]">{s.intro}</p>
       </div>
 
       <div className="flex gap-1.5 overflow-x-auto pb-1" role="list" aria-label={s.list}>
@@ -106,8 +106,8 @@ export default function Trills({ instrument, lang, t, sharp, initialId }: Props)
             role="listitem"
             onClick={() => select(x)}
             aria-current={x.id === tr.id}
-            className={`h-10 shrink-0 cursor-pointer rounded-lg px-3 text-sm font-semibold whitespace-nowrap transition-all focus-visible:outline-2 focus-visible:outline-[#f2c14e] ${
-              x.id === tr.id ? `${ON} shadow-[0_0_12px_rgba(217,164,65,0.4)]` : 'border border-[#3a2f1c] text-[#c9b892] hover:border-[#6b5732] hover:text-[#f2c14e]'
+            className={`h-10 shrink-0 cursor-pointer rounded-lg px-3 text-sm font-semibold whitespace-nowrap transition-all focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] ${
+              x.id === tr.id ? `${ON} shadow-[0_0_12px_rgba(217,164,65,0.4)]` : 'border border-[var(--c-3a2f1c)] text-[var(--c-c9b892)] hover:border-[var(--c-6b5732)] hover:text-[var(--c-f2c14e)]'
             }`}
           >
             {name(x.from)} ⇄ {name(x.to)}
@@ -116,32 +116,32 @@ export default function Trills({ instrument, lang, t, sharp, initialId }: Props)
       </div>
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_340px]">
-        <section className="order-2 flex flex-col items-center gap-3 rounded-2xl border border-[#2e2415] bg-[#1a1509] p-4 lg:order-1">
+        <section className="order-2 flex flex-col items-center gap-3 rounded-2xl border border-[var(--c-2e2415)] bg-[var(--c-1a1509)] p-4 lg:order-1">
           <FingeringDiagram pressed={pressed} missing={moving} bisLabel={t.bis} label={`${s.showing}: ${name(showTo ? tr.to : tr.from)}`} />
-          <p className="text-center text-sm text-[#a08c64]" aria-live="polite">
-            {s.showing}: <span className="font-semibold text-[#f2c14e]">{name(showTo ? tr.to : tr.from)}</span>
+          <p className="text-center text-sm text-[var(--c-a08c64)]" aria-live="polite">
+            {s.showing}: <span className="font-semibold text-[var(--c-f2c14e)]">{name(showTo ? tr.to : tr.from)}</span>
           </p>
         </section>
 
-        <section className="order-1 space-y-4 rounded-2xl border border-[#2e2415] bg-[#1a1509] p-4 lg:order-2">
-          <div className="font-display text-4xl leading-none text-[#f2c14e]">
+        <section className="order-1 space-y-4 rounded-2xl border border-[var(--c-2e2415)] bg-[var(--c-1a1509)] p-4 lg:order-2">
+          <div className="font-display text-4xl leading-none text-[var(--c-f2c14e)]">
             {name(tr.from)} ⇄ {name(tr.to)}
           </div>
           <dl className="space-y-2 text-sm">
             <div>
-              <dt className="text-[#a08c64]">{s.hold}</dt>
-              <dd className="font-semibold text-[#e8d5ae]">{tr.base.length ? keys(tr.base) : t.allOpen}</dd>
+              <dt className="text-[var(--c-a08c64)]">{s.hold}</dt>
+              <dd className="font-semibold text-[var(--c-e8d5ae)]">{tr.base.length ? keys(tr.base) : t.allOpen}</dd>
             </div>
             <div>
-              <dt className="text-[#a08c64]">
+              <dt className="text-[var(--c-a08c64)]">
                 {s.move} <span className="text-xs">({s.moveHint})</span>
               </dt>
-              <dd className="font-semibold text-[#5fd27a]">{keys(tr.move)}</dd>
+              <dd className="font-semibold text-[var(--c-5fd27a)]">{keys(tr.move)}</dd>
             </div>
           </dl>
-          <p className="rounded-xl border border-[#3a2f1c] bg-[#14100a] p-3 text-sm leading-relaxed text-[#d9c9a8]">{tipText(tr, lang)}</p>
+          <p className="rounded-xl border border-[var(--c-3a2f1c)] bg-[var(--c-14100a)] p-3 text-sm leading-relaxed text-[var(--c-d9c9a8)]">{tipText(tr, lang)}</p>
 
-          <div className="flex rounded-xl border border-[#4a3b22] p-0.5" role="group" aria-label={s.speed}>
+          <div className="flex rounded-xl border border-[var(--c-4a3b22)] p-0.5" role="group" aria-label={s.speed}>
             {(['slow', 'medium', 'fast'] as const).map((v) => (
               <button
                 key={v}
@@ -150,7 +150,7 @@ export default function Trills({ instrument, lang, t, sharp, initialId }: Props)
                   setSpeed(v)
                 }}
                 aria-pressed={speed === v}
-                className={`h-10 flex-1 cursor-pointer rounded-[10px] px-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-[#f2c14e] ${speed === v ? ON : 'text-[#c9b892] hover:text-[#f2c14e]'}`}
+                className={`h-10 flex-1 cursor-pointer rounded-[10px] px-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] ${speed === v ? ON : 'text-[var(--c-c9b892)] hover:text-[var(--c-f2c14e)]'}`}
               >
                 {s[v]}
               </button>
@@ -159,13 +159,13 @@ export default function Trills({ instrument, lang, t, sharp, initialId }: Props)
 
           <button
             onClick={() => (phase === null ? play() : stop())}
-            className={`flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[#f2c14e] ${ON}`}
+            className={`flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] ${ON}`}
           >
             {phase === null ? <Play size={18} /> : <Square size={18} />}
             {phase === null ? s.play : t.stop}
           </button>
 
-          <button onClick={() => setSecond((v) => !v)} aria-pressed={second} disabled={phase !== null} className={`${BTN} w-full disabled:cursor-not-allowed disabled:opacity-40 ${second ? 'border-[#f2c14e] text-[#f2c14e]' : ''}`}>
+          <button onClick={() => setSecond((v) => !v)} aria-pressed={second} disabled={phase !== null} className={`${BTN} w-full disabled:cursor-not-allowed disabled:opacity-40 ${second ? 'border-[var(--c-f2c14e)] text-[var(--c-f2c14e)]' : ''}`}>
             {s.showSecond}
           </button>
         </section>

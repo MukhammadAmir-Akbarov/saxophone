@@ -18,11 +18,11 @@ type S = (typeof DIARY)['ru']
 const GOALS = [10, 15, 20, 30, 45, 60]
 
 const CHIP =
-  'h-10 min-w-10 cursor-pointer rounded-[10px] px-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[#f2c14e]'
-const ON = 'bg-gradient-to-br from-[#f6d98a] to-[#c8922e] text-[#241a08]'
-const OFF = 'text-[#c9b892] hover:text-[#f2c14e]'
+  'h-10 min-w-10 cursor-pointer rounded-[10px] px-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]'
+const ON = 'bg-gradient-to-br from-[var(--c-f6d98a)] to-[var(--c-c8922e)] text-[var(--c-241a08)]'
+const OFF = 'text-[var(--c-c9b892)] hover:text-[var(--c-f2c14e)]'
 const BTN =
-  'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-[#4a3b22] px-4 text-sm font-semibold text-[#e8d5ae] hover:bg-[#241c11] hover:text-[#f2c14e] focus-visible:outline-2 focus-visible:outline-[#f2c14e]'
+  'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--c-4a3b22)] px-4 text-sm font-semibold text-[var(--c-e8d5ae)] hover:bg-[var(--c-241c11)] hover:text-[var(--c-f2c14e)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]'
 
 const fill = (tpl: string, a: number | string, b?: number | string) =>
   tpl.replace('{1}', String(a)).replace('{2}', String(b ?? ''))
@@ -112,22 +112,22 @@ function Ring({ value, goal, s }: { value: number; goal: number; s: S }) {
   const met = p >= 1
   return (
     <svg viewBox="0 0 128 128" className="h-32 w-32 shrink-0" role="img" aria-label={`${s.today}: ${fmtDur(value, s)} / ${goal} ${s.min}`}>
-      <circle cx="64" cy="64" r={R} fill="none" stroke="#2e2415" strokeWidth="12" />
+      <circle cx="64" cy="64" r={R} fill="none" style={{ stroke: 'var(--c-2e2415)' }} strokeWidth="12" />
       <circle
         cx="64"
         cy="64"
         r={R}
         fill="none"
-        stroke={met ? '#5fd27a' : '#f2c14e'}
+        style={{ stroke: met ? 'var(--c-5fd27a)' : 'var(--c-f2c14e)' }}
         strokeWidth="12"
         strokeLinecap="round"
         strokeDasharray={`${C * p} ${C}`}
         transform="rotate(-90 64 64)"
       />
-      <text x="64" y="64" textAnchor="middle" fontSize="28" fontWeight="700" fill="#f5e8cd">
+      <text x="64" y="64" textAnchor="middle" fontSize="28" fontWeight="700" style={{ fill: 'var(--c-f5e8cd)' }}>
         {Math.floor(value / 60)}
       </text>
-      <text x="64" y="86" textAnchor="middle" fontSize="12" fill="#a08c64">
+      <text x="64" y="86" textAnchor="middle" fontSize="12" style={{ fill: 'var(--c-a08c64)' }}>
         / {goal} {s.min}
       </text>
     </svg>
@@ -155,9 +155,9 @@ function WeekChart({ days, d, goal, s }: { days: string[]; d: Diary; goal: numbe
         const h = Math.max(v > 0 ? 2 : 0, BASE - y(v))
         return (
           <g key={day}>
-            <rect x={x} y={BASE - h} width={slot * 0.6} height={h} rx="4" fill={met ? '#f2c14e' : '#6b5732'} />
+            <rect x={x} y={BASE - h} width={slot * 0.6} height={h} rx="4" style={{ fill: met ? 'var(--c-f2c14e)' : 'var(--c-6b5732)' }} />
             {v >= 60 && (
-              <text x={x + slot * 0.3} y={BASE - h - 4} textAnchor="middle" fontSize="11" fill="#d9c9a8">
+              <text x={x + slot * 0.3} y={BASE - h - 4} textAnchor="middle" fontSize="11" style={{ fill: 'var(--c-d9c9a8)' }}>
                 {Math.round(v / 60)}
               </text>
             )}
@@ -167,18 +167,18 @@ function WeekChart({ days, d, goal, s }: { days: string[]; d: Diary; goal: numbe
               textAnchor="middle"
               fontSize="11"
               fontWeight={day === today ? 700 : 400}
-              fill={day === today ? '#f2c14e' : '#a08c64'}
+              style={{ fill: day === today ? 'var(--c-f2c14e)' : 'var(--c-a08c64)' }}
             >
               {wd(day, s)}
             </text>
           </g>
         )
       })}
-      <line x1="0" x2={W} y1={y(goal * 60)} y2={y(goal * 60)} stroke="#d9a441" strokeDasharray="4 4" strokeWidth="1" />
-      <text x={W - 2} y={y(goal * 60) - 4} textAnchor="end" fontSize="10" fill="#d9a441">
+      <line x1="0" x2={W} y1={y(goal * 60)} y2={y(goal * 60)} style={{ stroke: 'var(--c-d9a441)' }} strokeDasharray="4 4" strokeWidth="1" />
+      <text x={W - 2} y={y(goal * 60) - 4} textAnchor="end" fontSize="10" style={{ fill: 'var(--c-d9a441)' }}>
         {s.goalLine} {goal}
       </text>
-      <line x1="0" x2={W} y1={BASE} y2={BASE} stroke="#3a2f1c" />
+      <line x1="0" x2={W} y1={BASE} y2={BASE} style={{ stroke: 'var(--c-3a2f1c)' }} />
     </svg>
   )
 }
@@ -250,16 +250,16 @@ export default function DiaryModal({ onClose, lang, t, nameOf }: Props) {
       aria-label={s.title}
     >
       <div
-        className="max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-[#3a2f1c] bg-[#1c1610] p-5 shadow-2xl"
+        className="max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-[var(--c-3a2f1c)] bg-[var(--c-1c1610)] p-5 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-xl text-[#f2e3c2]">{report === null ? s.title : s.reportPreview}</h2>
+          <h2 className="font-display text-xl text-[var(--c-f2e3c2)]">{report === null ? s.title : s.reportPreview}</h2>
           <button
             ref={closeRef}
             onClick={onClose}
             aria-label={t.close}
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-[#4a3b22] text-[#e8d5ae] hover:bg-[#241c11] hover:text-[#f2c14e] focus-visible:outline-2 focus-visible:outline-[#f2c14e]"
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-[var(--c-4a3b22)] text-[var(--c-e8d5ae)] hover:bg-[var(--c-241c11)] hover:text-[var(--c-f2c14e)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
           >
             <X size={20} />
           </button>
@@ -270,15 +270,15 @@ export default function DiaryModal({ onClose, lang, t, nameOf }: Props) {
             <div className="flex items-center gap-4">
               <Ring value={daySeconds(today, diary)} goal={goal} s={s} />
               <div className="min-w-0">
-                <div className="text-sm text-[#a08c64]">{s.streak}</div>
-                <div className="font-display text-3xl text-[#f2c14e]">{streak}</div>
-                <div className="mt-2 text-sm text-[#a08c64]">{s.weekTotal}</div>
-                <div className="text-lg font-semibold text-[#f5e8cd]">{fmtDur(weekTotal, s)}</div>
+                <div className="text-sm text-[var(--c-a08c64)]">{s.streak}</div>
+                <div className="font-display text-3xl text-[var(--c-f2c14e)]">{streak}</div>
+                <div className="mt-2 text-sm text-[var(--c-a08c64)]">{s.weekTotal}</div>
+                <div className="text-lg font-semibold text-[var(--c-f5e8cd)]">{fmtDur(weekTotal, s)}</div>
               </div>
             </div>
 
-            <div className="mt-4 text-sm text-[#c9b892]">{s.goal}</div>
-            <div className="mt-1 flex flex-wrap gap-1 rounded-xl border border-[#2e2415] bg-[#14100a] p-1" role="radiogroup" aria-label={s.goal}>
+            <div className="mt-4 text-sm text-[var(--c-c9b892)]">{s.goal}</div>
+            <div className="mt-1 flex flex-wrap gap-1 rounded-xl border border-[var(--c-2e2415)] bg-[var(--c-14100a)] p-1" role="radiogroup" aria-label={s.goal}>
               {GOALS.map((g) => (
                 <button
                   key={g}
@@ -293,36 +293,36 @@ export default function DiaryModal({ onClose, lang, t, nameOf }: Props) {
               ))}
             </div>
 
-            <div className="mt-4 text-sm text-[#c9b892]">{s.week}</div>
-            <div className="mt-1 rounded-xl border border-[#2e2415] bg-[#14100a] p-2">
+            <div className="mt-4 text-sm text-[var(--c-c9b892)]">{s.week}</div>
+            <div className="mt-1 rounded-xl border border-[var(--c-2e2415)] bg-[var(--c-14100a)] p-2">
               <WeekChart days={days} d={diary} goal={goal} s={s} />
             </div>
 
-            <div className="mt-4 text-sm text-[#c9b892]">{s.byActivity}</div>
+            <div className="mt-4 text-sm text-[var(--c-c9b892)]">{s.byActivity}</div>
             {acts.length ? (
-              <ul className="mt-1 divide-y divide-[#2e2415] rounded-xl border border-[#2e2415] bg-[#14100a]">
+              <ul className="mt-1 divide-y divide-[var(--c-2e2415)] rounded-xl border border-[var(--c-2e2415)] bg-[var(--c-14100a)]">
                 {acts.map(([a, v]) => (
                   <li key={a} className="flex items-center justify-between px-3 py-2 text-sm">
-                    <span className="text-[#e8d5ae]">{actName(a, s)}</span>
-                    <span className="font-semibold text-[#f6d98a]">{fmtDur(v, s)}</span>
+                    <span className="text-[var(--c-e8d5ae)]">{actName(a, s)}</span>
+                    <span className="font-semibold text-[var(--c-f6d98a)]">{fmtDur(v, s)}</span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-1 text-sm text-[#7a6845]">{s.empty}</p>
+              <p className="mt-1 text-sm text-[var(--c-7a6845)]">{s.empty}</p>
             )}
 
-            <button onClick={openReport} className={`${BTN} mt-5 w-full border-transparent ${ON} hover:text-[#241a08]`}>
+            <button onClick={openReport} className={`${BTN} mt-5 w-full border-transparent ${ON} hover:text-[var(--c-241a08)]`}>
               <Send size={18} /> {s.report}
             </button>
           </>
         ) : (
           <>
-            <pre className="max-h-[50dvh] overflow-auto whitespace-pre-wrap rounded-xl border border-[#2e2415] bg-[#14100a] p-3 font-sans text-sm text-[#e8d5ae] select-text">
+            <pre className="max-h-[50dvh] overflow-auto whitespace-pre-wrap rounded-xl border border-[var(--c-2e2415)] bg-[var(--c-14100a)] p-3 font-sans text-sm text-[var(--c-e8d5ae)] select-text">
               {report}
             </pre>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <button onClick={sendTelegram} className={`${BTN} col-span-2 border-transparent ${ON} hover:text-[#241a08]`}>
+              <button onClick={sendTelegram} className={`${BTN} col-span-2 border-transparent ${ON} hover:text-[var(--c-241a08)]`}>
                 <Send size={18} /> {s.sendTelegram}
               </button>
               {typeof navigator.share === 'function' && (
@@ -338,8 +338,8 @@ export default function DiaryModal({ onClose, lang, t, nameOf }: Props) {
               </button>
             </div>
             <p className="mt-2 min-h-5 text-sm" role="status" aria-live="polite">
-              {status === 'copied' && <span className="text-[#5fd27a]">{s.copied}</span>}
-              {status === 'failed' && <span className="text-[#ff8a78]">{s.copyFailed}</span>}
+              {status === 'copied' && <span className="text-[var(--c-5fd27a)]">{s.copied}</span>}
+              {status === 'failed' && <span className="text-[var(--c-ff8a78)]">{s.copyFailed}</span>}
             </p>
           </>
         )}

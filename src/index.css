@@ -12,8 +12,8 @@
   }
 
   body {
-    background-color: #14100a;
-    color: #f0e6d2;
+    background-color: var(--c-14100a);
+    color: var(--c-f0e6d2);
     -webkit-font-smoothing: antialiased;
   }
 
@@ -23,7 +23,7 @@
     width: 6px;
   }
   ::-webkit-scrollbar-thumb {
-    background: #4a3b22;
+    background: var(--c-4a3b22);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-track {
@@ -38,3 +38,85 @@
     }
   }
 }
+
+/* THEME-VARS */
+:root {
+  --c-14100a: #14100a;
+  --c-16351c: #16351c;
+  --c-1a1509: #1a1509;
+  --c-1c1610: #1c1610;
+  --c-1f4a29: #1f4a29;
+  --c-221b10: #221b10;
+  --c-241a08: #241a08;
+  --c-241c11: #241c11;
+  --c-2a2115: #2a2115;
+  --c-2e2415: #2e2415;
+  --c-2f6b3b: #2f6b3b;
+  --c-351816: #351816;
+  --c-3a2f1c: #3a2f1c;
+  --c-4a3b22: #4a3b22;
+  --c-5c4c2e: #5c4c2e;
+  --c-5fd27a: #5fd27a;
+  --c-6b2f2a: #6b2f2a;
+  --c-6b5228: #6b5228;
+  --c-6b5732: #6b5732;
+  --c-7a2418: #7a2418;
+  --c-7a6845: #7a6845;
+  --c-8f7c57: #8f7c57;
+  --c-a08c64: #a08c64;
+  --c-b8322a: #b8322a;
+  --c-c8922e: #c8922e;
+  --c-c9b892: #c9b892;
+  --c-d9a441: #d9a441;
+  --c-d9c9a8: #d9c9a8;
+  --c-e8d5ae: #e8d5ae;
+  --c-f0e6d2: #f0e6d2;
+  --c-f2c14e: #f2c14e;
+  --c-f2e3c2: #f2e3c2;
+  --c-f5e8cd: #f5e8cd;
+  --c-f6d98a: #f6d98a;
+  --c-ff6b57: #ff6b57;
+  --c-ff8a78: #ff8a78;
+}
+
+/* светлая тема: та же раскладка, тёплая «бумага» вместо тёмного дерева */
+html.light {
+  --c-14100a: #faf6ee;
+  --c-16351c: #e3f5e7;
+  --c-1a1509: #fffdf8;
+  --c-1c1610: #fffaf0;
+  --c-1f4a29: #bfe6c8;
+  --c-221b10: #ffffff;
+  --c-241a08: #241a08;
+  --c-241c11: #f3eadb;
+  --c-2a2115: #efe4d1;
+  --c-2e2415: #e8dcc6;
+  --c-2f6b3b: #9fd3ad;
+  --c-351816: #fbe9e6;
+  --c-3a2f1c: #dccdb1;
+  --c-4a3b22: #cdb894;
+  --c-5c4c2e: #b9a37c;
+  --c-5fd27a: #1f8a3b;
+  --c-6b2f2a: #e8b4ad;
+  --c-6b5228: #d9c08a;
+  --c-6b5732: #a88b5a;
+  --c-7a2418: #f8d3cc;
+  --c-7a6845: #8a7652;
+  --c-8f7c57: #7d6a48;
+  --c-a08c64: #6e5c3d;
+  --c-b8322a: #b8322a;
+  --c-c8922e: #c8922e;
+  --c-c9b892: #5a4a32;
+  --c-d9a441: #c8922e;
+  --c-d9c9a8: #4a3b27;
+  --c-e8d5ae: #3d3020;
+  --c-f0e6d2: #2b2214;
+  --c-f2c14e: #a8740f;
+  --c-f2e3c2: #2b2214;
+  --c-f5e8cd: #2b2214;
+  --c-f6d98a: #f6d98a;
+  --c-ff6b57: #d63d2a;
+  --c-ff8a78: #c0392b;
+  color-scheme: light;
+}
+html:not(.light) { color-scheme: dark; }

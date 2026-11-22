@@ -89,7 +89,7 @@ export default function FingeringDiagram({ pressed, onToggle, missing = NONE, ex
       </defs>
 
       {/* перемычка между руками */}
-      <line x1="96" y1="347" x2="212" y2="347" stroke="#5c4c2e" strokeWidth="3" strokeLinecap="round" />
+      <line x1="96" y1="347" x2="212" y2="347" style={{ stroke: 'var(--c-5c4c2e)' }} strokeWidth="3" strokeLinecap="round" />
 
       {SHAPES.map((k) => {
         const on = pressed.has(k.id)
@@ -97,13 +97,18 @@ export default function FingeringDiagram({ pressed, onToggle, missing = NONE, ex
         const bad = extra.has(k.id)
         const text = k.id === 'bis' ? bisLabel : k.label
         // лишний — красный, недостающий — зелёный пунктир: видно, что исправить
+        // Цвета — в style, не атрибутами: var(--c-…) (светлая тема) в SVG-атрибутах
+        // работает не во всех браузерах. data-on — метка нажатого для печатной версии.
         const common = {
-          fill: bad ? '#7a2418' : on ? 'url(#gold)' : miss ? '#16351c' : '#221b10',
-          stroke: bad ? '#ff6b57' : miss ? '#5fd27a' : on ? '#f2c14e' : '#7a6845',
           strokeWidth: on || miss || bad ? 2.5 : 2,
           strokeDasharray: miss ? '5 4' : undefined,
           filter: on && !bad ? 'url(#glow)' : undefined,
-          style: { transition: 'fill 160ms ease-out, stroke 160ms ease-out' } as React.CSSProperties,
+          'data-on': on || undefined,
+          style: {
+            fill: bad ? 'var(--c-7a2418)' : on ? 'url(#gold)' : miss ? 'var(--c-16351c)' : 'var(--c-221b10)',
+            stroke: bad ? 'var(--c-ff6b57)' : miss ? 'var(--c-5fd27a)' : on ? 'var(--c-f2c14e)' : 'var(--c-7a6845)',
+            transition: 'fill 160ms ease-out, stroke 160ms ease-out',
+          } as React.CSSProperties,
         }
         return (
           <g
@@ -113,7 +118,7 @@ export default function FingeringDiagram({ pressed, onToggle, missing = NONE, ex
               tabIndex: 0,
               'aria-pressed': on,
               'aria-label': text,
-              className: 'cursor-pointer outline-none [&:focus-visible>*:first-child]:stroke-[#f6d98a]',
+              className: 'cursor-pointer outline-none [&:focus-visible>*:first-child]:stroke-[var(--c-f6d98a)]',
               onClick: () => onToggle(k.id),
               onKeyDown: (e: React.KeyboardEvent) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -146,8 +151,7 @@ export default function FingeringDiagram({ pressed, onToggle, missing = NONE, ex
               textAnchor={k.anchor}
               fontSize="13"
               fontWeight={on ? 700 : 500}
-              fill={bad ? '#ff6b57' : miss ? '#5fd27a' : on ? '#f2c14e' : '#8d7956'}
-              style={{ transition: 'fill 160ms ease-out' }}
+              style={{ fill: bad ? 'var(--c-ff6b57)' : miss ? 'var(--c-5fd27a)' : on ? 'var(--c-f2c14e)' : 'var(--c-8d7956)', transition: 'fill 160ms ease-out' }}
             >
               {text}
             </text>

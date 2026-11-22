@@ -35,9 +35,9 @@ type Mode = 'listen' | 'check' | 'steps'
 const CUSTOM = 'custom'
 
 const BTN =
-  'flex h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[#4a3b22] px-3 text-sm font-semibold text-[#e8d5ae] transition-colors hover:bg-[#241c11] hover:text-[#f2c14e] focus-visible:outline-2 focus-visible:outline-[#f2c14e] disabled:cursor-not-allowed disabled:opacity-40'
-const ON = 'bg-gradient-to-br from-[#f6d98a] to-[#c8922e] text-[#241a08]'
-const PRIMARY = `flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[#f2c14e] ${ON}`
+  'flex h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--c-4a3b22)] px-3 text-sm font-semibold text-[var(--c-e8d5ae)] transition-colors hover:bg-[var(--c-241c11)] hover:text-[var(--c-f2c14e)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] disabled:cursor-not-allowed disabled:opacity-40'
+const ON = 'bg-gradient-to-br from-[var(--c-f6d98a)] to-[var(--c-c8922e)] text-[var(--c-241a08)]'
+const PRIMARY = `flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] ${ON}`
 
 const titleOf = (m: Melody, lang: Lang) => (lang === 'uzc' ? toCyrillic(m.title.uz) : m.title[lang])
 
@@ -79,23 +79,23 @@ export default function Melodies({ instrument, lang, t, bpm, setBpm, sharp, init
     return (
       <main className="mx-auto w-full max-w-5xl flex-1 space-y-4 px-4 py-4 sm:px-6">
         <div>
-          <h2 className="font-display text-2xl text-[#f2c14e]">{s.title}</h2>
-          <p className="mt-1 text-sm text-[#a08c64]">{s.intro}</p>
+          <h2 className="font-display text-2xl text-[var(--c-f2c14e)]">{s.title}</h2>
+          <p className="mt-1 text-sm text-[var(--c-a08c64)]">{s.intro}</p>
         </div>
         <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {MELODIES.map((m) => (
             <li key={m.id}>
               <button
                 onClick={() => open(m.id)}
-                className="flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-[#3a2f1c] bg-[#1a1509] px-4 py-3 text-left transition-colors hover:border-[#6b5732] focus-visible:outline-2 focus-visible:outline-[#f2c14e]"
+                className="flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-[var(--c-3a2f1c)] bg-[var(--c-1a1509)] px-4 py-3 text-left transition-colors hover:border-[var(--c-6b5732)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
               >
                 <span className="flex items-center gap-3">
-                  <Music size={18} className="shrink-0 text-[#d9a441]" />
-                  <span className="font-semibold text-[#f0e6d2]">{titleOf(m, lang)}</span>
+                  <Music size={18} className="shrink-0 text-[var(--c-d9a441)]" />
+                  <span className="font-semibold text-[var(--c-f0e6d2)]">{titleOf(m, lang)}</span>
                 </span>
-                <span className="shrink-0 text-sm tracking-widest text-[#d9a441]" aria-label={`${s.level} ${m.level}/3`}>
+                <span className="shrink-0 text-sm tracking-widest text-[var(--c-d9a441)]" aria-label={`${s.level} ${m.level}/3`}>
                   {'★'.repeat(m.level)}
-                  <span className="text-[#5c4c2e]">{'★'.repeat(3 - m.level)}</span>
+                  <span className="text-[var(--c-5c4c2e)]">{'★'.repeat(3 - m.level)}</span>
                 </span>
               </button>
             </li>
@@ -103,12 +103,12 @@ export default function Melodies({ instrument, lang, t, bpm, setBpm, sharp, init
           <li>
             <button
               onClick={() => setSelected(CUSTOM)}
-              className="flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-xl border border-dashed border-[#6b5732] bg-[#14100a] px-4 py-3 text-left hover:border-[#d9a441] focus-visible:outline-2 focus-visible:outline-[#f2c14e]"
+              className="flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-xl border border-dashed border-[var(--c-6b5732)] bg-[var(--c-14100a)] px-4 py-3 text-left hover:border-[var(--c-d9a441)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
             >
-              <Pencil size={18} className="shrink-0 text-[#d9a441]" />
+              <Pencil size={18} className="shrink-0 text-[var(--c-d9a441)]" />
               <span>
-                <span className="block font-semibold text-[#f0e6d2]">{s.custom}</span>
-                <span className="block text-xs text-[#a08c64]">{s.customDesc}</span>
+                <span className="block font-semibold text-[var(--c-f0e6d2)]">{s.custom}</span>
+                <span className="block text-xs text-[var(--c-a08c64)]">{s.customDesc}</span>
               </span>
             </button>
           </li>
@@ -123,12 +123,12 @@ export default function Melodies({ instrument, lang, t, bpm, setBpm, sharp, init
         <button onClick={() => setSelected(null)} aria-label={s.back} className={BTN}>
           <ChevronLeft size={20} />
         </button>
-        <h2 className="font-display text-2xl text-[#f2c14e]">{melody ? titleOf(melody, lang) : s.custom}</h2>
+        <h2 className="font-display text-2xl text-[var(--c-f2c14e)]">{melody ? titleOf(melody, lang) : s.custom}</h2>
       </div>
 
       {selected === CUSTOM && (
-        <section className="space-y-2 rounded-2xl border border-[#2e2415] bg-[#1a1509] p-4">
-          <label htmlFor="melodyText" className="text-sm font-semibold text-[#e8d5ae]">
+        <section className="space-y-2 rounded-2xl border border-[var(--c-2e2415)] bg-[var(--c-1a1509)] p-4">
+          <label htmlFor="melodyText" className="text-sm font-semibold text-[var(--c-e8d5ae)]">
             {s.customLabel}
           </label>
           <textarea
@@ -141,11 +141,11 @@ export default function Melodies({ instrument, lang, t, bpm, setBpm, sharp, init
             rows={3}
             spellCheck={false}
             placeholder="G4 A4 B4:2 | r B4 A4 G4:2"
-            className="w-full rounded-xl border border-[#4a3b22] bg-[#14100a] p-3 font-mono text-sm text-[#f0e6d2] placeholder:text-[#5c4c2e] focus-visible:outline-2 focus-visible:outline-[#f2c14e]"
+            className="w-full rounded-xl border border-[var(--c-4a3b22)] bg-[var(--c-14100a)] p-3 font-mono text-sm text-[var(--c-f0e6d2)] placeholder:text-[var(--c-5c4c2e)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
           />
-          <p className="text-xs text-[#a08c64]">{s.customHelp}</p>
+          <p className="text-xs text-[var(--c-a08c64)]">{s.customHelp}</p>
           {parsed.errors.length > 0 && (
-            <p className="text-sm text-[#ff8a78]" role="alert">
+            <p className="text-sm text-[var(--c-ff8a78)]" role="alert">
               {s.errors}: <span className="font-mono">{parsed.errors.join('  ')}</span>
             </p>
           )}
@@ -156,7 +156,7 @@ export default function Melodies({ instrument, lang, t, bpm, setBpm, sharp, init
         // key: другая мелодия — свежий плеер (курсор, таймеры, режим «с проверкой»)
         <Player key={selected + '|' + text} notes={parsed.notes} meter={melody?.meter ?? 4} {...{ instrument, lang, t, s, bpm, setBpm, sharp }} />
       ) : (
-        <p className="text-sm text-[#a08c64]">{s.empty}</p>
+        <p className="text-sm text-[var(--c-a08c64)]">{s.empty}</p>
       )}
     </main>
   )
@@ -309,13 +309,13 @@ function Player({ notes, meter, instrument, t, s, bpm, setBpm, sharp }: PlayerPr
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex flex-wrap rounded-xl border border-[#4a3b22] p-0.5" role="group" aria-label={s.modes}>
+        <div className="flex flex-wrap rounded-xl border border-[var(--c-4a3b22)] p-0.5" role="group" aria-label={s.modes}>
           {modes.map(([m, label]) => (
             <button
               key={m}
               onClick={() => switchMode(m)}
               aria-pressed={mode === m}
-              className={`h-10 cursor-pointer rounded-[10px] px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-[#f2c14e] ${mode === m ? ON : 'text-[#c9b892] hover:text-[#f2c14e]'}`}
+              className={`h-10 cursor-pointer rounded-[10px] px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] ${mode === m ? ON : 'text-[var(--c-c9b892)] hover:text-[var(--c-f2c14e)]'}`}
             >
               {label}
             </button>
@@ -325,19 +325,19 @@ function Player({ notes, meter, instrument, t, s, bpm, setBpm, sharp }: PlayerPr
           <button onClick={() => setBpm(clampBpm(bpm - 4))} aria-label={`${t.bpm} −`} className={`${BTN} px-0`} disabled={playing}>
             <Minus size={16} />
           </button>
-          <span className="w-16 text-center text-sm font-semibold text-[#e8d5ae]">
-            {bpm} <span className="text-xs font-normal text-[#a08c64]">{t.bpm}</span>
+          <span className="w-16 text-center text-sm font-semibold text-[var(--c-e8d5ae)]">
+            {bpm} <span className="text-xs font-normal text-[var(--c-a08c64)]">{t.bpm}</span>
           </span>
           <button onClick={() => setBpm(clampBpm(bpm + 4))} aria-label={`${t.bpm} +`} className={`${BTN} px-0`} disabled={playing}>
             <Plus size={16} />
           </button>
         </div>
-        <span className="text-sm text-[#a08c64]">
+        <span className="text-sm text-[var(--c-a08c64)]">
           {s.meter} {meter}/4
         </span>
         {mode === 'listen' && (
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-[#c9b892]">
-            <input type="checkbox" checked={clicks} onChange={(e) => setClicks(e.target.checked)} disabled={playing} className="h-4 w-4 accent-[#d9a441]" />
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-[var(--c-c9b892)]">
+            <input type="checkbox" checked={clicks} onChange={(e) => setClicks(e.target.checked)} disabled={playing} className="h-4 w-4 accent-[var(--c-d9a441)]" />
             {t.clicks}
           </label>
         )}
@@ -355,34 +355,34 @@ function Player({ notes, meter, instrument, t, s, bpm, setBpm, sharp }: PlayerPr
             onClick={() => go(k)}
             aria-label={`${n.index === null ? s.rest : noteName(n)}, ${beatsLabel(n.beats)} ${s.beats}`}
             className={`flex h-12 min-w-11 shrink-0 cursor-pointer flex-col items-center justify-center rounded-lg px-2 leading-tight transition-all disabled:cursor-default ${
-              k === pos ? `${ON} shadow-[0_0_12px_rgba(217,164,65,0.4)]` : 'border border-[#3a2f1c] text-[#c9b892] enabled:hover:border-[#6b5732] enabled:hover:text-[#f2c14e]'
+              k === pos ? `${ON} shadow-[0_0_12px_rgba(217,164,65,0.4)]` : 'border border-[var(--c-3a2f1c)] text-[var(--c-c9b892)] enabled:hover:border-[var(--c-6b5732)] enabled:hover:text-[var(--c-f2c14e)]'
             }`}
           >
             <span className="text-sm font-semibold">{n.index === null ? '𝄽' : noteName(n)}</span>
-            <span className={`text-[10px] ${k === pos ? 'text-[#241a08]' : 'text-[#7a6845]'}`}>{beatsLabel(n.beats)}</span>
+            <span className={`text-[10px] ${k === pos ? 'text-[var(--c-241a08)]' : 'text-[var(--c-7a6845)]'}`}>{beatsLabel(n.beats)}</span>
           </button>
         ))}
       </div>
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_340px]">
-        <section className="order-2 flex min-h-40 flex-col items-center justify-center gap-3 rounded-2xl border border-[#2e2415] bg-[#1a1509] p-4 lg:order-1">
+        <section className="order-2 flex min-h-40 flex-col items-center justify-center gap-3 rounded-2xl border border-[var(--c-2e2415)] bg-[var(--c-1a1509)] p-4 lg:order-1">
           {/* у паузы схемы нет: пустая схема выглядела бы как «все клапаны открыты» (C♯5) */}
-          {note ? <FingeringDiagram pressed={pressed} bisLabel={t.bis} label={t.legendTitle} /> : <span className="font-display text-6xl text-[#5c4c2e]">𝄽</span>}
+          {note ? <FingeringDiagram pressed={pressed} bisLabel={t.bis} label={t.legendTitle} /> : <span className="font-display text-6xl text-[var(--c-5c4c2e)]">𝄽</span>}
         </section>
 
-        <section className="order-1 rounded-2xl border border-[#2e2415] bg-[#1a1509] p-4 lg:order-2">
-          <div className="text-sm text-[#a08c64]">
+        <section className="order-1 rounded-2xl border border-[var(--c-2e2415)] bg-[var(--c-1a1509)] p-4 lg:order-2">
+          <div className="text-sm text-[var(--c-a08c64)]">
             {countIn > 0 ? s.countIn : `${pos + 1}/${notes.length} · ${beatsLabel(cur.beats)} ${s.beats}`}
           </div>
           <div className="mt-1 flex items-start justify-between gap-3">
-            <div className="font-display text-5xl leading-none text-[#f2c14e]" aria-live="polite">
+            <div className="font-display text-5xl leading-none text-[var(--c-f2c14e)]" aria-live="polite">
               {big}
             </div>
             {note && mode !== 'check' && (
               <button
                 onClick={() => sound(pos)}
                 aria-label={`${t.listen} ${noteName(cur)}`}
-                className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#4a3b22] text-[#e8d5ae] hover:bg-[#241c11] hover:text-[#f2c14e] focus-visible:outline-2 focus-visible:outline-[#f2c14e]"
+                className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--c-4a3b22)] text-[var(--c-e8d5ae)] hover:bg-[var(--c-241c11)] hover:text-[var(--c-f2c14e)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
               >
                 <Volume2 size={22} />
               </button>
@@ -503,15 +503,15 @@ function CheckMode({ notes, first, pos, setPos, instrument, t, s, sharp }: Check
     startedAt.current = performance.now()
   }
 
-  if (denied) return <p className="mt-4 text-sm text-[#ff8a78]">{t.micDenied}</p>
+  if (denied) return <p className="mt-4 text-sm text-[var(--c-ff8a78)]">{t.micDenied}</p>
 
   if (doneSec !== null) {
     const mm = Math.floor(doneSec / 60)
     const ss = String(Math.round(doneSec % 60)).padStart(2, '0')
     return (
-      <div className="mt-4 space-y-3 rounded-xl border border-[#2f6b3b] bg-[#16351c] p-4 text-center" role="status">
-        <div className="font-display text-2xl text-[#5fd27a]">{s.done}</div>
-        <div className="text-sm text-[#e8d5ae]">
+      <div className="mt-4 space-y-3 rounded-xl border border-[var(--c-2f6b3b)] bg-[var(--c-16351c)] p-4 text-center" role="status">
+        <div className="font-display text-2xl text-[var(--c-5fd27a)]">{s.done}</div>
+        <div className="text-sm text-[var(--c-e8d5ae)]">
           {s.time}: {mm}:{ss}, {s.hints}: {hints}
         </div>
         <button onClick={restart} className={PRIMARY}>
@@ -528,22 +528,22 @@ function CheckMode({ notes, first, pos, setPos, instrument, t, s, sharp }: Check
   return (
     <div className="mt-4 space-y-3">
       <div
-        className={`flex h-14 items-center justify-between rounded-xl border px-4 ${flash ? 'border-[#2f6b3b] bg-[#16351c]' : 'border-[#3a2f1c] bg-[#14100a]'}`}
+        className={`flex h-14 items-center justify-between rounded-xl border px-4 ${flash ? 'border-[var(--c-2f6b3b)] bg-[var(--c-16351c)]' : 'border-[var(--c-3a2f1c)] bg-[var(--c-14100a)]'}`}
         aria-live="polite"
       >
         {flash ? (
-          <span className="flex items-center gap-2 font-semibold text-[#5fd27a]">
+          <span className="flex items-center gap-2 font-semibold text-[var(--c-5fd27a)]">
             <Check size={20} /> {t.correct}
           </span>
         ) : live === null ? (
-          <span className="text-sm text-[#a08c64]">{s.silence}</span>
+          <span className="text-sm text-[var(--c-a08c64)]">{s.silence}</span>
         ) : (
           <>
-            <span className="text-sm text-[#a08c64]">
-              {s.hearing} <span className={`font-display text-2xl ${hit ? 'text-[#5fd27a]' : 'text-[#f0e6d2]'}`}>{midiName(live, sharp)}</span>
+            <span className="text-sm text-[var(--c-a08c64)]">
+              {s.hearing} <span className={`font-display text-2xl ${hit ? 'text-[var(--c-5fd27a)]' : 'text-[var(--c-f0e6d2)]'}`}>{midiName(live, sharp)}</span>
             </span>
             {cents !== null && Math.abs(cents) < 100 && (
-              <span className={`text-sm font-semibold ${hit ? 'text-[#5fd27a]' : 'text-[#ff8a78]'}`}>
+              <span className={`text-sm font-semibold ${hit ? 'text-[var(--c-5fd27a)]' : 'text-[var(--c-ff8a78)]'}`}>
                 {cents > 0 ? '+' : ''}
                 {cents} {t.cents}
               </span>

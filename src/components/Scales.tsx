@@ -21,10 +21,10 @@ interface Props {
 const COUNT_IN = 4
 
 const SEL =
-  'h-11 cursor-pointer rounded-xl border border-[#4a3b22] bg-[#14100a] px-2 text-sm font-semibold text-[#e8d5ae] focus-visible:outline-2 focus-visible:outline-[#f2c14e]'
+  'h-11 cursor-pointer rounded-xl border border-[var(--c-4a3b22)] bg-[var(--c-14100a)] px-2 text-sm font-semibold text-[var(--c-e8d5ae)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]'
 const BTN =
-  'flex h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[#4a3b22] px-3 text-sm font-semibold text-[#e8d5ae] transition-colors hover:bg-[#241c11] hover:text-[#f2c14e] focus-visible:outline-2 focus-visible:outline-[#f2c14e] disabled:cursor-not-allowed disabled:opacity-40'
-const ON = 'bg-gradient-to-br from-[#f6d98a] to-[#c8922e] text-[#241a08]'
+  'flex h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--c-4a3b22)] px-3 text-sm font-semibold text-[var(--c-e8d5ae)] transition-colors hover:bg-[var(--c-241c11)] hover:text-[var(--c-f2c14e)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] disabled:cursor-not-allowed disabled:opacity-40'
+const ON = 'bg-gradient-to-br from-[var(--c-f6d98a)] to-[var(--c-c8922e)] text-[var(--c-241a08)]'
 
 export default function Scales({ instrument, lang, bpm, setBpm, t }: Props) {
   const [tonic, setTonic] = usePersisted('scaleTonic', 0)
@@ -185,13 +185,13 @@ export default function Scales({ instrument, lang, bpm, setBpm, t }: Props) {
             </option>
           ))}
         </select>
-        <div className="flex rounded-xl border border-[#4a3b22] p-0.5" role="group" aria-label={t.octaves}>
+        <div className="flex rounded-xl border border-[var(--c-4a3b22)] p-0.5" role="group" aria-label={t.octaves}>
           {([1, 2] as const).map((o) => (
             <button
               key={o}
               onClick={() => change(setOctaves)(o)}
               aria-pressed={octaves === o}
-              className={`h-10 cursor-pointer rounded-[10px] px-3 text-sm font-semibold ${octaves === o ? ON : 'text-[#c9b892] hover:text-[#f2c14e]'}`}
+              className={`h-10 cursor-pointer rounded-[10px] px-3 text-sm font-semibold ${octaves === o ? ON : 'text-[var(--c-c9b892)] hover:text-[var(--c-f2c14e)]'}`}
             >
               {o} {t.octShort}
             </button>
@@ -201,23 +201,23 @@ export default function Scales({ instrument, lang, bpm, setBpm, t }: Props) {
           <button onClick={() => setBpm(clampBpm(bpm - 4))} aria-label={`${t.bpm} −`} className={`${BTN} px-0`} disabled={playing}>
             <Minus size={16} />
           </button>
-          <span className="w-16 text-center text-sm font-semibold text-[#e8d5ae]">
-            {bpm} <span className="text-xs font-normal text-[#a08c64]">{t.bpm}</span>
+          <span className="w-16 text-center text-sm font-semibold text-[var(--c-e8d5ae)]">
+            {bpm} <span className="text-xs font-normal text-[var(--c-a08c64)]">{t.bpm}</span>
           </span>
           <button onClick={() => setBpm(clampBpm(bpm + 4))} aria-label={`${t.bpm} +`} className={`${BTN} px-0`} disabled={playing}>
             <Plus size={16} />
           </button>
         </div>
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-[#c9b892]">
-          <input type="checkbox" checked={clicks} onChange={(e) => setClicks(e.target.checked)} disabled={playing} className="h-4 w-4 accent-[#d9a441]" />
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-[var(--c-c9b892)]">
+          <input type="checkbox" checked={clicks} onChange={(e) => setClicks(e.target.checked)} disabled={playing} className="h-4 w-4 accent-[var(--c-d9a441)]" />
           {t.clicks}
         </label>
         <button onClick={() => setDrone((d) => !d)} aria-pressed={drone} className={drone ? `${BTN} border-transparent ${ON}` : BTN} title={t.droneHint}>
           {t.drone}
         </button>
         {drone && (
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-[#c9b892]">
-            <input type="checkbox" checked={droneFifth} onChange={(e) => setDroneFifth(e.target.checked)} className="h-4 w-4 accent-[#d9a441]" />
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-[var(--c-c9b892)]">
+            <input type="checkbox" checked={droneFifth} onChange={(e) => setDroneFifth(e.target.checked)} className="h-4 w-4 accent-[var(--c-d9a441)]" />
             {t.droneFifth}
           </label>
         )}
@@ -232,7 +232,7 @@ export default function Scales({ instrument, lang, bpm, setBpm, t }: Props) {
             data-active={k === pos}
             onClick={() => go(k)}
             className={`h-10 min-w-10 shrink-0 cursor-pointer rounded-lg px-2 text-sm font-semibold transition-all ${
-              k === pos ? `${ON} shadow-[0_0_12px_rgba(217,164,65,0.4)]` : 'border border-[#3a2f1c] text-[#c9b892] hover:border-[#6b5732] hover:text-[#f2c14e]'
+              k === pos ? `${ON} shadow-[0_0_12px_rgba(217,164,65,0.4)]` : 'border border-[var(--c-3a2f1c)] text-[var(--c-c9b892)] hover:border-[var(--c-6b5732)] hover:text-[var(--c-f2c14e)]'
             }`}
           >
             {name(k)}
@@ -241,12 +241,12 @@ export default function Scales({ instrument, lang, bpm, setBpm, t }: Props) {
       </div>
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_340px]">
-        <section className="order-2 flex flex-col items-center gap-3 rounded-2xl border border-[#2e2415] bg-[#1a1509] p-4 lg:order-1">
+        <section className="order-2 flex flex-col items-center gap-3 rounded-2xl border border-[var(--c-2e2415)] bg-[var(--c-1a1509)] p-4 lg:order-1">
           <FingeringDiagram pressed={pressed} bisLabel={t.bis} label={t.legendTitle} />
-          <p className="text-center text-sm text-[#a08c64]">
+          <p className="text-center text-sm text-[var(--c-a08c64)]">
             {note.keys.length ? (
               <>
-                {t.pressed}: <span className="font-semibold text-[#e8d5ae]">{note.keys.map((k) => keyLabel(k, lang, KEY_LABELS)).join(' · ')}</span>
+                {t.pressed}: <span className="font-semibold text-[var(--c-e8d5ae)]">{note.keys.map((k) => keyLabel(k, lang, KEY_LABELS)).join(' · ')}</span>
               </>
             ) : (
               t.allOpen
@@ -254,23 +254,23 @@ export default function Scales({ instrument, lang, bpm, setBpm, t }: Props) {
           </p>
         </section>
 
-        <section className="order-1 rounded-2xl border border-[#2e2415] bg-[#1a1509] p-4 lg:order-2">
-          <div className="text-sm text-[#a08c64]">
+        <section className="order-1 rounded-2xl border border-[var(--c-2e2415)] bg-[var(--c-1a1509)] p-4 lg:order-2">
+          <div className="text-sm text-[var(--c-a08c64)]">
             {tonicName(tonic, type)} {typeLabel[type].toLowerCase()} · {pos + 1}/{seq.length}
           </div>
           <div className="mt-1 flex items-start justify-between gap-3">
             <div>
-              <div className="font-display text-5xl leading-none text-[#f2c14e]" aria-live="polite">
+              <div className="font-display text-5xl leading-none text-[var(--c-f2c14e)]" aria-live="polite">
                 {countIn > 0 ? countIn : name(pos)}
               </div>
-              <div className="mt-2 text-xs text-[#a08c64]">
-                {t.sounds} <span className="font-semibold text-[#e8d5ae]">{midiName(concertMidi(note.id, instrument), keyIsSharp(tonic + TRANSPOSE[instrument], type) || !!cur.leading)}</span>
+              <div className="mt-2 text-xs text-[var(--c-a08c64)]">
+                {t.sounds} <span className="font-semibold text-[var(--c-e8d5ae)]">{midiName(concertMidi(note.id, instrument), keyIsSharp(tonic + TRANSPOSE[instrument], type) || !!cur.leading)}</span>
               </div>
             </div>
             <button
               onClick={() => sound(pos)}
               aria-label={`${t.listen} ${name(pos)}`}
-              className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#4a3b22] text-[#e8d5ae] hover:bg-[#241c11] hover:text-[#f2c14e]"
+              className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--c-4a3b22)] text-[var(--c-e8d5ae)] hover:bg-[var(--c-241c11)] hover:text-[var(--c-f2c14e)]"
             >
               <Volume2 size={22} />
             </button>
@@ -284,7 +284,7 @@ export default function Scales({ instrument, lang, bpm, setBpm, t }: Props) {
             </button>
             <button
               onClick={() => (playing ? stopMetronome() : start())}
-              className={`flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[#f2c14e] ${ON}`}
+              className={`flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] ${ON}`}
             >
               {playing ? <Square size={18} /> : <Play size={18} />}
               {playing ? t.stop : t.playScale}

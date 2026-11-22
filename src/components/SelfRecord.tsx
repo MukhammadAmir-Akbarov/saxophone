@@ -1,3 +1,4 @@
+import { col } from '../lib/theme'
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react'
 import { Circle, RotateCcw, Square, X } from 'lucide-react'
 import { midiName, stopAll, type Instrument } from '../lib/sound'
@@ -95,13 +96,13 @@ function drawTake(cv: HTMLCanvasElement, take: Take, sharp: boolean, cursorSec: 
   g.textBaseline = 'middle'
   g.lineWidth = 1
   for (let m = lo; m <= hi; m++) {
-    g.strokeStyle = '#2e2415'
+    g.strokeStyle = col('2e2415')
     g.beginPath()
     g.moveTo(LABEL_W, y(m))
     g.lineTo(w, y(m))
     g.stroke()
     if ((m - lo) % every === 0) {
-      g.fillStyle = '#7a6845'
+      g.fillStyle = col('7a6845')
       g.fillText(midiName(m, sharp), 2, y(m))
     }
   }
@@ -126,7 +127,7 @@ function drawTake(cv: HTMLCanvasElement, take: Take, sharp: boolean, cursorSec: 
         g.stroke()
       }
       g.beginPath()
-      g.strokeStyle = inside ? '#5fd27a' : '#f2c14e'
+      g.strokeStyle = inside ? col('5fd27a') : col('f2c14e')
       g.moveTo(px, py)
       drawing = true
     } else g.lineTo(px, py)
@@ -136,7 +137,7 @@ function drawTake(cv: HTMLCanvasElement, take: Take, sharp: boolean, cursorSec: 
 
   // курсор воспроизведения
   const cx = x(Math.min(cursorSec, take.dur) * 1000)
-  g.strokeStyle = '#f0e6d2'
+  g.strokeStyle = col('f0e6d2')
   g.lineWidth = 1.5
   g.beginPath()
   g.moveTo(cx, 0)
@@ -145,9 +146,9 @@ function drawTake(cv: HTMLCanvasElement, take: Take, sharp: boolean, cursorSec: 
 }
 
 const BTN =
-  'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[#f2c14e] disabled:cursor-not-allowed disabled:opacity-50'
-const PRIMARY = 'bg-gradient-to-br from-[#f6d98a] to-[#c8922e] text-[#241a08]'
-const GHOST = 'border border-[#4a3b22] text-[#e8d5ae] hover:bg-[#241c11] hover:text-[#f2c14e]'
+  'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] disabled:cursor-not-allowed disabled:opacity-50'
+const PRIMARY = 'bg-gradient-to-br from-[var(--c-f6d98a)] to-[var(--c-c8922e)] text-[var(--c-241a08)]'
+const GHOST = 'border border-[var(--c-4a3b22)] text-[var(--c-e8d5ae)] hover:bg-[var(--c-241c11)] hover:text-[var(--c-f2c14e)]'
 
 export default function SelfRecord({ onClose, instrument, sharp, lang, t }: Props) {
   const s = pick(SELFREC, lang)
@@ -318,35 +319,35 @@ export default function SelfRecord({ onClose, instrument, sharp, lang, t }: Prop
       aria-label={s.title}
     >
       <div
-        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-[#3a2f1c] bg-[#1c1610] p-5 shadow-2xl"
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-[var(--c-3a2f1c)] bg-[var(--c-1c1610)] p-5 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-lg font-bold text-[#f5e8cd]">{s.title}</h2>
+          <h2 className="text-lg font-bold text-[var(--c-f5e8cd)]">{s.title}</h2>
           <button
             ref={closeRef}
             onClick={onClose}
             aria-label={t.close}
-            className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#4a3b22] text-[#d9c9a8] transition-colors hover:bg-[#2a2115] hover:text-[#f2c14e] focus-visible:outline-2 focus-visible:outline-[#f2c14e]"
+            className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--c-4a3b22)] text-[var(--c-d9c9a8)] transition-colors hover:bg-[var(--c-2a2115)] hover:text-[var(--c-f2c14e)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
           >
             <X size={20} />
           </button>
         </div>
 
         {denied ? (
-          <p className="py-8 text-center text-sm text-[#ff8a78]">{t.micDenied}</p>
+          <p className="py-8 text-center text-sm text-[var(--c-ff8a78)]">{t.micDenied}</p>
         ) : (
           <>
-            {!take && !recording && <p className="mb-4 text-sm text-[#a08c64]">{s.intro}</p>}
+            {!take && !recording && <p className="mb-4 text-sm text-[var(--c-a08c64)]">{s.intro}</p>}
 
             {recording ? (
               <div className="flex flex-col items-center gap-3 py-4">
-                <div className="flex items-center gap-2 text-sm text-[#ff8a78]" aria-live="polite">
-                  <Circle size={12} className="animate-pulse fill-[#ff8a78]" />
+                <div className="flex items-center gap-2 text-sm text-[var(--c-ff8a78)]" aria-live="polite">
+                  <Circle size={12} className="animate-pulse fill-[var(--c-ff8a78)]" />
                   {s.recording}
                 </div>
-                <div className="text-3xl font-bold tabular-nums text-[#f0e6d2]">
-                  {elapsed.toFixed(1)} <span className="text-base text-[#a08c64]">/ {MAX_SEC} {t.sec}</span>
+                <div className="text-3xl font-bold tabular-nums text-[var(--c-f0e6d2)]">
+                  {elapsed.toFixed(1)} <span className="text-base text-[var(--c-a08c64)]">/ {MAX_SEC} {t.sec}</span>
                 </div>
                 <button onClick={stop} className={`${BTN} ${PRIMARY} w-full`}>
                   <Square size={16} /> {t.stop}
@@ -360,7 +361,7 @@ export default function SelfRecord({ onClose, instrument, sharp, lang, t }: Prop
               </button>
             )}
 
-            {err && <p className="mt-3 text-center text-sm text-[#ff8a78]">{err}</p>}
+            {err && <p className="mt-3 text-center text-sm text-[var(--c-ff8a78)]">{err}</p>}
 
             {take && (
               <div className="mt-4 flex flex-col gap-3">
@@ -380,12 +381,12 @@ export default function SelfRecord({ onClose, instrument, sharp, lang, t }: Prop
                       tabIndex={0}
                       aria-label={`${s.graph}. ${s.graphHint}`}
                       style={{ height: GRAPH_H }}
-                      className="w-full cursor-pointer touch-none rounded-xl border border-[#2e2415] bg-[#14100a] focus-visible:outline-2 focus-visible:outline-[#f2c14e]"
+                      className="w-full cursor-pointer touch-none rounded-xl border border-[var(--c-2e2415)] bg-[var(--c-14100a)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
                     />
-                    <p className="text-xs text-[#7a6845]">{s.graphHint}</p>
+                    <p className="text-xs text-[var(--c-7a6845)]">{s.graphHint}</p>
                   </>
                 ) : (
-                  <p className="text-sm text-[#a08c64]">{s.noPitch}</p>
+                  <p className="text-sm text-[var(--c-a08c64)]">{s.noPitch}</p>
                 )}
                 <dl className="grid grid-cols-3 gap-2 text-center">
                   <Stat label={s.duration} value={`${take.dur.toFixed(1)} ${t.sec}`} />
@@ -403,9 +404,9 @@ export default function SelfRecord({ onClose, instrument, sharp, lang, t }: Prop
 
 function Stat({ label, value, good }: { label: string; value: string; good?: boolean }) {
   return (
-    <div className="rounded-xl border border-[#2e2415] bg-[#14100a] px-2 py-2">
-      <dt className="text-[11px] leading-tight text-[#7a6845]">{label}</dt>
-      <dd className={`mt-1 text-sm font-semibold ${good ? 'text-[#5fd27a]' : 'text-[#f2e3c2]'}`}>{value}</dd>
+    <div className="rounded-xl border border-[var(--c-2e2415)] bg-[var(--c-14100a)] px-2 py-2">
+      <dt className="text-[11px] leading-tight text-[var(--c-7a6845)]">{label}</dt>
+      <dd className={`mt-1 text-sm font-semibold ${good ? 'text-[var(--c-5fd27a)]' : 'text-[var(--c-f2e3c2)]'}`}>{value}</dd>
     </div>
   )
 }

@@ -141,9 +141,9 @@ export default function Recorder({ onClose, instrument, startIndex, nameOf, own,
 
   const canShareFiles = typeof navigator.canShare === 'function'
   const nav =
-    'flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-[#4a3b22] text-[#e8d5ae] hover:bg-[#241c11] hover:text-[#f2c14e] disabled:cursor-not-allowed disabled:opacity-40'
+    'flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-[var(--c-4a3b22)] text-[var(--c-e8d5ae)] hover:bg-[var(--c-241c11)] hover:text-[var(--c-f2c14e)] disabled:cursor-not-allowed disabled:opacity-40'
   const small =
-    'flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[#4a3b22] px-3 text-sm font-semibold text-[#e8d5ae] hover:bg-[#241c11] hover:text-[#f2c14e] disabled:cursor-not-allowed disabled:opacity-40'
+    'flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[var(--c-4a3b22)] px-3 text-sm font-semibold text-[var(--c-e8d5ae)] hover:bg-[var(--c-241c11)] hover:text-[var(--c-f2c14e)] disabled:cursor-not-allowed disabled:opacity-40'
 
   return (
     <div
@@ -154,21 +154,21 @@ export default function Recorder({ onClose, instrument, startIndex, nameOf, own,
       aria-label={t.recTitle}
     >
       <div
-        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-[#3a2f1c] bg-[#1c1610] p-5 shadow-2xl"
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-[var(--c-3a2f1c)] bg-[var(--c-1c1610)] p-5 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="font-display text-xl text-[#f2e3c2]">{t.recTitle}</h2>
+          <h2 className="font-display text-xl text-[var(--c-f2e3c2)]">{t.recTitle}</h2>
           <button
             ref={closeRef}
             onClick={onClose}
             aria-label={t.close}
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-[#4a3b22] text-[#d9c9a8] hover:bg-[#2a2115] hover:text-[#f2c14e]"
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-[var(--c-4a3b22)] text-[var(--c-d9c9a8)] hover:bg-[var(--c-2a2115)] hover:text-[var(--c-f2c14e)]"
           >
             <X size={20} />
           </button>
         </div>
-        <p className="text-xs leading-relaxed text-[#a08c64]">
+        <p className="text-xs leading-relaxed text-[var(--c-a08c64)]">
           {t.recHint} {t[instrument]}.
         </p>
 
@@ -177,8 +177,8 @@ export default function Recorder({ onClose, instrument, startIndex, nameOf, own,
             <ChevronLeft size={20} />
           </button>
           <div className="text-center">
-            <div className="font-display text-5xl leading-none text-[#f2c14e]">{nameOf(note)}</div>
-            <div className="mt-1 text-xs text-[#a08c64]">{has ? `✓ ${t.recHave}` : note.sound ? t.recBuiltin : t.synth}</div>
+            <div className="font-display text-5xl leading-none text-[var(--c-f2c14e)]">{nameOf(note)}</div>
+            <div className="mt-1 text-xs text-[var(--c-a08c64)]">{has ? `✓ ${t.recHave}` : note.sound ? t.recBuiltin : t.synth}</div>
           </div>
           <button onClick={() => setIdx(idx + 1)} disabled={idx === NOTES.length - 1 || state !== 'idle'} aria-label={t.next} className={nav}>
             <ChevronRight size={20} />
@@ -189,7 +189,7 @@ export default function Recorder({ onClose, instrument, startIndex, nameOf, own,
           onClick={() => (state === 'rec' ? rec.current?.stop() : record())}
           disabled={state === 'busy'}
           className={`mt-4 flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl text-base font-semibold transition-colors disabled:opacity-50 ${
-            state === 'rec' ? 'bg-[#b8322a] text-white' : 'bg-gradient-to-br from-[#f6d98a] to-[#c8922e] text-[#241a08] hover:brightness-110'
+            state === 'rec' ? 'bg-[var(--c-b8322a)] text-white' : 'bg-gradient-to-br from-[var(--c-f6d98a)] to-[var(--c-c8922e)] text-[var(--c-241a08)] hover:brightness-110'
           }`}
         >
           {state === 'rec' ? (
@@ -198,11 +198,11 @@ export default function Recorder({ onClose, instrument, startIndex, nameOf, own,
             </>
           ) : (
             <>
-              <Circle size={18} className="fill-current text-[#b8322a]" /> {has ? t.recAgain : t.recStart}
+              <Circle size={18} className="fill-current text-[var(--c-b8322a)]" /> {has ? t.recAgain : t.recStart}
             </>
           )}
         </button>
-        <p className="mt-2 min-h-5 text-center text-sm text-[#c9b892]" role="status">
+        <p className="mt-2 min-h-5 text-center text-sm text-[var(--c-c9b892)]" role="status">
           {state === 'busy' ? t.recBusy : msg}
         </p>
 
@@ -227,10 +227,10 @@ export default function Recorder({ onClose, instrument, startIndex, nameOf, own,
               aria-current={i === idx}
               className={`h-8 min-w-9 cursor-pointer rounded-md px-1 text-[11px] font-semibold ${
                 i === idx
-                  ? 'bg-gradient-to-br from-[#f6d98a] to-[#c8922e] text-[#241a08]'
+                  ? 'bg-gradient-to-br from-[var(--c-f6d98a)] to-[var(--c-c8922e)] text-[var(--c-241a08)]'
                   : own.has(n.id)
-                    ? 'border border-[#2f6b3b] bg-[#16351c] text-[#5fd27a]'
-                    : 'border border-[#3a2f1c] text-[#8f7c57]'
+                    ? 'border border-[var(--c-2f6b3b)] bg-[var(--c-16351c)] text-[var(--c-5fd27a)]'
+                    : 'border border-[var(--c-3a2f1c)] text-[var(--c-8f7c57)]'
               }`}
             >
               {nameOf(n)}
@@ -238,9 +238,9 @@ export default function Recorder({ onClose, instrument, startIndex, nameOf, own,
           ))}
         </div>
 
-        <div className="mt-4 flex items-center justify-between gap-2 border-t border-[#2e2415] pt-4">
-          <span className="text-sm text-[#c9b892]">
-            {t.recProgress}: <b className="text-[#f2c14e]">{own.size}/{NOTES.length}</b>
+        <div className="mt-4 flex items-center justify-between gap-2 border-t border-[var(--c-2e2415)] pt-4">
+          <span className="text-sm text-[var(--c-c9b892)]">
+            {t.recProgress}: <b className="text-[var(--c-f2c14e)]">{own.size}/{NOTES.length}</b>
           </span>
           <div className="flex gap-2">
             {canShareFiles && (
@@ -253,7 +253,7 @@ export default function Recorder({ onClose, instrument, startIndex, nameOf, own,
             </button>
           </div>
         </div>
-        <p className="mt-2 text-xs text-[#7a6845]">{t.recExportHint}</p>
+        <p className="mt-2 text-xs text-[var(--c-7a6845)]">{t.recExportHint}</p>
       </div>
     </div>
   )

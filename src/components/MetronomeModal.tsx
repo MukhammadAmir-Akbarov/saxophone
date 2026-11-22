@@ -64,13 +64,13 @@ const fit = (acc: Accent[], beats: number): Accent[] =>
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 
-const CHIP = 'h-9 min-w-9 cursor-pointer rounded-[10px] px-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[#f2c14e]'
-const ON = 'bg-gradient-to-br from-[#f6d98a] to-[#c8922e] text-[#241a08]'
-const OFF = 'text-[#c9b892] hover:text-[#f2c14e]'
+const CHIP = 'h-9 min-w-9 cursor-pointer rounded-[10px] px-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]'
+const ON = 'bg-gradient-to-br from-[var(--c-f6d98a)] to-[var(--c-c8922e)] text-[var(--c-241a08)]'
+const OFF = 'text-[var(--c-c9b892)] hover:text-[var(--c-f2c14e)]'
 const ROUND =
-  'flex h-11 min-w-11 cursor-pointer items-center justify-center rounded-full border border-[#4a3b22] px-2 text-sm font-semibold text-[#e8d5ae] hover:bg-[#241c11] hover:text-[#f2c14e] focus-visible:outline-2 focus-visible:outline-[#f2c14e]'
+  'flex h-11 min-w-11 cursor-pointer items-center justify-center rounded-full border border-[var(--c-4a3b22)] px-2 text-sm font-semibold text-[var(--c-e8d5ae)] hover:bg-[var(--c-241c11)] hover:text-[var(--c-f2c14e)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]'
 const NUM =
-  'h-9 w-16 rounded-lg border border-[#4a3b22] bg-[#14100a] px-2 text-center text-sm font-semibold text-[#e8d5ae] focus-visible:outline-2 focus-visible:outline-[#f2c14e]'
+  'h-9 w-16 rounded-lg border border-[var(--c-4a3b22)] bg-[var(--c-14100a)] px-2 text-center text-sm font-semibold text-[var(--c-e8d5ae)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]'
 
 export default function MetronomeModal({ onClose, bpm, setBpm, beats, setBeats, t }: Props) {
   const [accentsRaw, setAccents] = usePersisted<Accent[]>('metroAccents', defaultAccents(4))
@@ -223,13 +223,13 @@ export default function MetronomeModal({ onClose, bpm, setBpm, beats, setBeats, 
       aria-label={t.metronome}
     >
       <div
-        className={`max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-2xl border bg-[#1c1610] p-5 shadow-2xl transition-colors duration-75 ${
-          flash && !info?.muted ? 'border-[#f2c14e]' : 'border-[#3a2f1c]'
+        className={`max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-2xl border bg-[var(--c-1c1610)] p-5 shadow-2xl transition-colors duration-75 ${
+          flash && !info?.muted ? 'border-[var(--c-f2c14e)]' : 'border-[var(--c-3a2f1c)]'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-xl text-[#f2e3c2]">{t.metronome}</h2>
+          <h2 className="font-display text-xl text-[var(--c-f2e3c2)]">{t.metronome}</h2>
           <button ref={closeRef} onClick={onClose} aria-label={t.close} className={`${ROUND} w-10 min-w-10 px-0`}>
             <X size={20} />
           </button>
@@ -245,28 +245,28 @@ export default function MetronomeModal({ onClose, bpm, setBpm, beats, setBeats, 
                 key={i}
                 onClick={() => cycle(i)}
                 aria-label={`${i + 1}: ${[t.accMute, t.accWeak, t.accMid, t.accStrong][a]}`}
-                className="flex h-11 w-9 cursor-pointer items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-[#f2c14e]"
+                className="flex h-11 w-9 cursor-pointer items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
               >
                 <span
                   className={`rounded-full transition-colors duration-75 ${size} ${
                     a === 0
-                      ? `border-2 border-dashed ${now ? 'border-[#e8d5ae]' : 'border-[#4a3b22]'}`
+                      ? `border-2 border-dashed ${now ? 'border-[var(--c-e8d5ae)]' : 'border-[var(--c-4a3b22)]'}`
                       : now
                         ? info?.muted
-                          ? 'bg-[#5c4c2e]'
+                          ? 'bg-[var(--c-5c4c2e)]'
                           : a === 3
-                            ? 'bg-[#f2c14e] shadow-[0_0_14px_rgba(242,193,78,0.7)]'
-                            : 'bg-[#e8d5ae]'
+                            ? 'bg-[var(--c-f2c14e)] shadow-[0_0_14px_rgba(242,193,78,0.7)]'
+                            : 'bg-[var(--c-e8d5ae)]'
                         : a === 3
-                          ? 'bg-[#6b5228]'
-                          : 'bg-[#3a2f1c]'
+                          ? 'bg-[var(--c-6b5228)]'
+                          : 'bg-[var(--c-3a2f1c)]'
                   }`}
                 />
               </button>
             )
           })}
         </div>
-        <p className="mt-1 text-center text-[11px] text-[#7a6845]">{t.accentHint}</p>
+        <p className="mt-1 text-center text-[11px] text-[var(--c-7a6845)]">{t.accentHint}</p>
 
         {/* темп */}
         <div className="mt-3 flex items-center justify-center gap-2">
@@ -277,8 +277,8 @@ export default function MetronomeModal({ onClose, bpm, setBpm, beats, setBeats, 
             <Minus size={18} />
           </button>
           <div className="w-28 text-center">
-            <div className="font-display text-5xl leading-none text-[#f2c14e]">{bpm}</div>
-            <div className="mt-1 text-xs text-[#a08c64]">
+            <div className="font-display text-5xl leading-none text-[var(--c-f2c14e)]">{bpm}</div>
+            <div className="mt-1 text-xs text-[var(--c-a08c64)]">
               {t.bpm} · <i>{tempoName(bpm)}</i>
             </div>
           </div>
@@ -296,69 +296,69 @@ export default function MetronomeModal({ onClose, bpm, setBpm, beats, setBeats, 
           value={bpm}
           onChange={(e) => setBpm(clampBpm(Number(e.target.value)))}
           aria-label={t.bpm}
-          className="mt-3 w-full accent-[#d9a441]"
+          className="mt-3 w-full accent-[var(--c-d9a441)]"
         />
 
         <div className="mt-3 flex gap-2">
           <button
             onClick={toggle}
-            className={`flex h-12 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[#f2c14e] ${ON}`}
+            className={`flex h-12 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold hover:brightness-110 focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)] ${ON}`}
           >
             {running ? <Square size={18} /> : <Play size={18} />}
             {running ? t.stop : t.start}
           </button>
           <button
             onClick={tap}
-            className="h-12 cursor-pointer rounded-xl border border-[#4a3b22] px-4 font-semibold text-[#e8d5ae] hover:bg-[#241c11] hover:text-[#f2c14e] focus-visible:outline-2 focus-visible:outline-[#f2c14e]"
+            className="h-12 cursor-pointer rounded-xl border border-[var(--c-4a3b22)] px-4 font-semibold text-[var(--c-e8d5ae)] hover:bg-[var(--c-241c11)] hover:text-[var(--c-f2c14e)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
           >
             {t.tap}
           </button>
         </div>
 
         {/* счётчик: такт, время, таймер, пропуск тактов */}
-        <div className="mt-2 flex min-h-5 justify-center gap-4 text-xs text-[#a08c64]" aria-live="off">
+        <div className="mt-2 flex min-h-5 justify-center gap-4 text-xs text-[var(--c-a08c64)]" aria-live="off">
           {running && info && (
             <>
               <span>
-                {t.bar}: <b className="text-[#e8d5ae]">{info.bar + 1}</b>
+                {t.bar}: <b className="text-[var(--c-e8d5ae)]">{info.bar + 1}</b>
               </span>
               <span>
-                ⏱ <b className="text-[#e8d5ae]">{mmss(elapsed)}</b>
+                ⏱ <b className="text-[var(--c-e8d5ae)]">{mmss(elapsed)}</b>
               </span>
               {timerMin > 0 && (
                 <span>
-                  {t.timerLeft}: <b className="text-[#e8d5ae]">{mmss(Math.max(0, left))}</b>
+                  {t.timerLeft}: <b className="text-[var(--c-e8d5ae)]">{mmss(Math.max(0, left))}</b>
                 </span>
               )}
-              {info.muted && <span className="text-[#f2c14e]">{t.mutedBar}</span>}
+              {info.muted && <span className="text-[var(--c-f2c14e)]">{t.mutedBar}</span>}
             </>
           )}
         </div>
 
         {/* размер */}
-        <div className="mt-4 text-xs font-semibold tracking-wider text-[#7a6845] uppercase">{t.meter}</div>
+        <div className="mt-4 text-xs font-semibold tracking-wider text-[var(--c-7a6845)] uppercase">{t.meter}</div>
         <div className="mt-1.5 flex flex-wrap items-center gap-1">
           {METERS.map((m) => (
-            <button key={m.label} onClick={() => setMeter(m.acc)} aria-pressed={meterLabel === m.label} className={`${CHIP} ${meterLabel === m.label ? ON : `border border-[#3a2f1c] ${OFF}`}`}>
+            <button key={m.label} onClick={() => setMeter(m.acc)} aria-pressed={meterLabel === m.label} className={`${CHIP} ${meterLabel === m.label ? ON : `border border-[var(--c-3a2f1c)] ${OFF}`}`}>
               {m.label}
             </button>
           ))}
           <div className="ml-auto flex items-center gap-1">
-            <button onClick={() => setBeatCount(beats - 1)} className={`${CHIP} border border-[#3a2f1c] ${OFF}`} aria-label={`${t.beatsPerBar} −`}>
+            <button onClick={() => setBeatCount(beats - 1)} className={`${CHIP} border border-[var(--c-3a2f1c)] ${OFF}`} aria-label={`${t.beatsPerBar} −`}>
               −
             </button>
-            <span className="w-14 text-center text-sm text-[#e8d5ae]">
-              {beats} <span className="text-[10px] text-[#a08c64]">{t.beatsShort}</span>
+            <span className="w-14 text-center text-sm text-[var(--c-e8d5ae)]">
+              {beats} <span className="text-[10px] text-[var(--c-a08c64)]">{t.beatsShort}</span>
             </span>
-            <button onClick={() => setBeatCount(beats + 1)} className={`${CHIP} border border-[#3a2f1c] ${OFF}`} aria-label={`${t.beatsPerBar} +`}>
+            <button onClick={() => setBeatCount(beats + 1)} className={`${CHIP} border border-[var(--c-3a2f1c)] ${OFF}`} aria-label={`${t.beatsPerBar} +`}>
               +
             </button>
           </div>
         </div>
 
         {/* дробление доли */}
-        <div className="mt-4 text-xs font-semibold tracking-wider text-[#7a6845] uppercase">{t.subdiv}</div>
-        <div className="mt-1.5 flex rounded-xl border border-[#4a3b22] p-0.5">
+        <div className="mt-4 text-xs font-semibold tracking-wider text-[var(--c-7a6845)] uppercase">{t.subdiv}</div>
+        <div className="mt-1.5 flex rounded-xl border border-[var(--c-4a3b22)] p-0.5">
           {SUBDIVS.map((s, i) => (
             <button key={s.n} onClick={() => setSubdiv(s.n)} aria-pressed={subdiv === s.n} title={subName[i]} className={`${CHIP} flex-1 ${subdiv === s.n ? ON : OFF}`}>
               <span className="text-lg leading-none">{s.sym}</span> <span className="text-[11px]">{subName[i]}</span>
@@ -367,28 +367,28 @@ export default function MetronomeModal({ onClose, bpm, setBpm, beats, setBeats, 
         </div>
 
         {/* звук */}
-        <div className="mt-4 text-xs font-semibold tracking-wider text-[#7a6845] uppercase">{t.soundLabel}</div>
+        <div className="mt-4 text-xs font-semibold tracking-wider text-[var(--c-7a6845)] uppercase">{t.soundLabel}</div>
         <div className="mt-1.5 flex flex-wrap gap-1">
           {CLICK_SOUNDS.map((s) => (
-            <button key={s} onClick={() => setSound(s)} aria-pressed={sound === s} className={`${CHIP} ${sound === s ? ON : `border border-[#3a2f1c] ${OFF}`}`}>
+            <button key={s} onClick={() => setSound(s)} aria-pressed={sound === s} className={`${CHIP} ${sound === s ? ON : `border border-[var(--c-3a2f1c)] ${OFF}`}`}>
               {soundName[s]}
             </button>
           ))}
         </div>
-        <label className="mt-2 flex items-center gap-3 text-sm text-[#c9b892]">
+        <label className="mt-2 flex items-center gap-3 text-sm text-[var(--c-c9b892)]">
           {t.volume}
-          <input type="range" min={0} max={1} step={0.05} value={volume} onChange={(e) => setVolume(Number(e.target.value))} className="flex-1 accent-[#d9a441]" />
+          <input type="range" min={0} max={1} step={0.05} value={volume} onChange={(e) => setVolume(Number(e.target.value))} className="flex-1 accent-[var(--c-d9a441)]" />
         </label>
 
         {/* тренажёры */}
-        <details className="mt-4 rounded-xl border border-[#2e2415] p-3" open={speed.on || gap.on || timerMin > 0}>
-          <summary className="cursor-pointer text-sm font-semibold text-[#e8d5ae]">{t.trainers}</summary>
+        <details className="mt-4 rounded-xl border border-[var(--c-2e2415)] p-3" open={speed.on || gap.on || timerMin > 0}>
+          <summary className="cursor-pointer text-sm font-semibold text-[var(--c-e8d5ae)]">{t.trainers}</summary>
 
-          <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm font-semibold text-[#e8d5ae]">
-            <input type="checkbox" checked={speed.on} onChange={(e) => setSpeed({ ...speed, on: e.target.checked })} className="h-4 w-4 accent-[#d9a441]" />
+          <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm font-semibold text-[var(--c-e8d5ae)]">
+            <input type="checkbox" checked={speed.on} onChange={(e) => setSpeed({ ...speed, on: e.target.checked })} className="h-4 w-4 accent-[var(--c-d9a441)]" />
             {t.speedTrainer}
           </label>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2 pl-6 text-sm text-[#c9b892]">
+          <div className="mt-1.5 flex flex-wrap items-center gap-2 pl-6 text-sm text-[var(--c-c9b892)]">
             +
             <input type="number" min={1} max={20} value={speed.step} onChange={(e) => setSpeed({ ...speed, step: Math.max(1, Number(e.target.value) || 1) })} className={NUM} aria-label={t.speedStep} />
             {t.bpm} {t.every}
@@ -397,47 +397,47 @@ export default function MetronomeModal({ onClose, bpm, setBpm, beats, setBeats, 
             <input type="number" min={20} max={300} value={speed.to} onChange={(e) => setSpeed({ ...speed, to: clampBpm(Number(e.target.value) || 120) })} className={NUM} aria-label={t.upTo} />
           </div>
 
-          <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm font-semibold text-[#e8d5ae]">
-            <input type="checkbox" checked={gap.on} onChange={(e) => setGap({ ...gap, on: e.target.checked })} className="h-4 w-4 accent-[#d9a441]" />
+          <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm font-semibold text-[var(--c-e8d5ae)]">
+            <input type="checkbox" checked={gap.on} onChange={(e) => setGap({ ...gap, on: e.target.checked })} className="h-4 w-4 accent-[var(--c-d9a441)]" />
             {t.gapTrainer}
           </label>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2 pl-6 text-sm text-[#c9b892]">
+          <div className="mt-1.5 flex flex-wrap items-center gap-2 pl-6 text-sm text-[var(--c-c9b892)]">
             <input type="number" min={1} max={16} value={gap.play} onChange={(e) => setGap({ ...gap, play: Math.max(1, Number(e.target.value) || 1) })} className={NUM} aria-label={t.gapPlay} />
             {t.gapPlay},
             <input type="number" min={1} max={16} value={gap.mute} onChange={(e) => setGap({ ...gap, mute: Math.max(1, Number(e.target.value) || 1) })} className={NUM} aria-label={t.gapMute} />
             {t.gapMute}
           </div>
-          <p className="mt-1 pl-6 text-[11px] text-[#7a6845]">{t.gapHint}</p>
+          <p className="mt-1 pl-6 text-[11px] text-[var(--c-7a6845)]">{t.gapHint}</p>
 
-          <div className="mt-3 text-sm font-semibold text-[#e8d5ae]">{t.timer}</div>
+          <div className="mt-3 text-sm font-semibold text-[var(--c-e8d5ae)]">{t.timer}</div>
           <div className="mt-1.5 flex flex-wrap gap-1">
             {TIMERS.map((m) => (
-              <button key={m} onClick={() => setTimerMin(m)} aria-pressed={timerMin === m} className={`${CHIP} ${timerMin === m ? ON : `border border-[#3a2f1c] ${OFF}`}`}>
+              <button key={m} onClick={() => setTimerMin(m)} aria-pressed={timerMin === m} className={`${CHIP} ${timerMin === m ? ON : `border border-[var(--c-3a2f1c)] ${OFF}`}`}>
                 {m ? `${m} ${t.minShort}` : t.off}
               </button>
             ))}
           </div>
-          {running && <p className="mt-1 text-[11px] text-[#7a6845]">{t.timerRestart}</p>}
+          {running && <p className="mt-1 text-[11px] text-[var(--c-7a6845)]">{t.timerRestart}</p>}
         </details>
 
         {/* сохранённые настройки */}
         <div className="mt-4 flex items-center justify-between">
-          <span className="text-xs font-semibold tracking-wider text-[#7a6845] uppercase">{t.presets}</span>
-          <button onClick={savePreset} className="cursor-pointer text-sm font-semibold text-[#f2c14e] hover:underline">
+          <span className="text-xs font-semibold tracking-wider text-[var(--c-7a6845)] uppercase">{t.presets}</span>
+          <button onClick={savePreset} className="cursor-pointer text-sm font-semibold text-[var(--c-f2c14e)] hover:underline">
             + {t.savePreset}
           </button>
         </div>
         {presets.length > 0 ? (
           <div className="mt-1.5 flex flex-wrap gap-1">
             {presets.map((p, i) => (
-              <span key={i} className="flex items-center rounded-[10px] border border-[#3a2f1c]">
+              <span key={i} className="flex items-center rounded-[10px] border border-[var(--c-3a2f1c)]">
                 <button onClick={() => loadPreset(p)} className={`${CHIP} ${OFF}`}>
                   {presetLabel(p)}
                 </button>
                 <button
                   onClick={() => setPresets(presets.filter((_, k) => k !== i))}
                   aria-label={`${t.recDelete} ${presetLabel(p)}`}
-                  className="flex h-9 w-7 cursor-pointer items-center justify-center text-[#7a6845] hover:text-[#ff8a78]"
+                  className="flex h-9 w-7 cursor-pointer items-center justify-center text-[var(--c-7a6845)] hover:text-[var(--c-ff8a78)]"
                 >
                   <Trash2 size={13} />
                 </button>
@@ -445,10 +445,10 @@ export default function MetronomeModal({ onClose, bpm, setBpm, beats, setBeats, 
             ))}
           </div>
         ) : (
-          <p className="mt-1 text-[11px] text-[#7a6845]">{t.presetsEmpty}</p>
+          <p className="mt-1 text-[11px] text-[var(--c-7a6845)]">{t.presetsEmpty}</p>
         )}
 
-        <p className="mt-4 text-center text-[11px] text-[#7a6845]">{t.metroKeys}</p>
+        <p className="mt-4 text-center text-[11px] text-[var(--c-7a6845)]">{t.metroKeys}</p>
       </div>
     </div>
   )

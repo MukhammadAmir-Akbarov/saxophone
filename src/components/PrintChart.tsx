@@ -32,7 +32,7 @@ interface Opts {
 // а не в Tailwind-классах: замена тёмной палитры на светлую их не должна трогать.
 // Схему FingeringDiagram править нельзя, поэтому перекрашиваем её SVG по атрибутам:
 // нажатый клапан рисуется fill="url(#gold)", отпущенный — fill="#221b10".
-// CSS сильнее презентационных атрибутов SVG, так что !important не нужен.
+// Цвета схемы заданы inline-стилем (ради тем), поэтому печать перебивает их !important.
 // Правила схемы — не только для печати: превью в окне показывает ровно то же.
 const CSS = `
 .ps-paper { background:#fff; color:#000; font-family: system-ui, sans-serif; }
@@ -48,11 +48,11 @@ const CSS = `
 .ps-body img { flex:0 1 38%; min-width:0; max-height:110px; object-fit:contain; }
 .ps-alts { font-size:7pt; color:#333; line-height:1.25; margin-top:2px; }
 .print-diagram svg { display:block; width:100%; height:auto; }
-.print-diagram ellipse, .print-diagram rect { fill:#fff; stroke:#000; stroke-width:2; filter:none; stroke-dasharray:none; }
-.print-diagram ellipse[fill="url(#gold)"], .print-diagram rect[fill="url(#gold)"] { fill:#000; }
-.print-diagram text { fill:#555; }
-.print-diagram text[font-weight="700"] { fill:#000; }
-.print-diagram line { stroke:#999; }
+.print-diagram ellipse, .print-diagram rect { fill:#fff !important; stroke:#000 !important; stroke-width:2; filter:none; stroke-dasharray:none; }
+.print-diagram [data-on] { fill:#000 !important; }
+.print-diagram text { fill:#555 !important; }
+.print-diagram text[font-weight="700"] { fill:#000 !important; }
+.print-diagram line { stroke:#999 !important; }
 @media screen { .print-sheet { display:none; } }
 @media print {
   @page { size: A4; margin: 10mm; }
@@ -145,8 +145,8 @@ export default function PrintChart({ onClose, lang, t, nameOf, instrument }: Pro
     </div>
   )
 
-  const CHIP = 'h-10 min-w-10 cursor-pointer rounded-[10px] px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-[#f2c14e]'
-  const CHECK = 'flex min-h-10 cursor-pointer items-center gap-2 text-sm font-semibold text-[#e8d5ae]'
+  const CHIP = 'h-10 min-w-10 cursor-pointer rounded-[10px] px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]'
+  const CHECK = 'flex min-h-10 cursor-pointer items-center gap-2 text-sm font-semibold text-[var(--c-e8d5ae)]'
 
   return (
     <>
@@ -158,52 +158,52 @@ export default function PrintChart({ onClose, lang, t, nameOf, instrument }: Pro
         aria-label={s.title}
       >
         <div
-          className="max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-[#3a2f1c] bg-[#1c1610] p-5 shadow-2xl"
+          className="max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-[var(--c-3a2f1c)] bg-[var(--c-1c1610)] p-5 shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="text-lg font-bold text-[#f5e8cd]">{s.title}</h2>
+            <h2 className="text-lg font-bold text-[var(--c-f5e8cd)]">{s.title}</h2>
             <button
               ref={closeRef}
               onClick={onClose}
               aria-label={t.close}
-              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-[#c9b892] hover:bg-[#241c11] hover:text-[#f2c14e] focus-visible:outline-2 focus-visible:outline-[#f2c14e]"
+              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-[var(--c-c9b892)] hover:bg-[var(--c-241c11)] hover:text-[var(--c-f2c14e)] focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
             >
               <X size={20} />
             </button>
           </div>
 
           <fieldset>
-            <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#a08c64]">{s.registers}</legend>
+            <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--c-a08c64)]">{s.registers}</legend>
             {REGS.map((r) => (
               <label key={r} className={CHECK}>
-                <input type="checkbox" checked={opts.regs.includes(r)} onChange={() => toggleReg(r)} className="h-4 w-4 accent-[#d9a441]" />
+                <input type="checkbox" checked={opts.regs.includes(r)} onChange={() => toggleReg(r)} className="h-4 w-4 accent-[var(--c-d9a441)]" />
                 {t[r]}
               </label>
             ))}
           </fieldset>
 
-          <div className="mt-3 border-t border-[#2e2415] pt-3">
+          <div className="mt-3 border-t border-[var(--c-2e2415)] pt-3">
             <label className={CHECK}>
-              <input type="checkbox" checked={opts.alts} onChange={(e) => setOpts({ ...opts, alts: e.target.checked })} className="h-4 w-4 accent-[#d9a441]" />
+              <input type="checkbox" checked={opts.alts} onChange={(e) => setOpts({ ...opts, alts: e.target.checked })} className="h-4 w-4 accent-[var(--c-d9a441)]" />
               {s.showAlts}
             </label>
             <label className={CHECK}>
-              <input type="checkbox" checked={opts.staff} onChange={(e) => setOpts({ ...opts, staff: e.target.checked })} className="h-4 w-4 accent-[#d9a441]" />
+              <input type="checkbox" checked={opts.staff} onChange={(e) => setOpts({ ...opts, staff: e.target.checked })} className="h-4 w-4 accent-[var(--c-d9a441)]" />
               {s.showStaff}
             </label>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[#2e2415] pt-3">
-            <span className="mr-1 text-sm font-semibold text-[#e8d5ae]">{s.columns}</span>
-            <div role="radiogroup" aria-label={s.columns} className="flex gap-1 rounded-xl bg-[#14100a] p-1">
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--c-2e2415)] pt-3">
+            <span className="mr-1 text-sm font-semibold text-[var(--c-e8d5ae)]">{s.columns}</span>
+            <div role="radiogroup" aria-label={s.columns} className="flex gap-1 rounded-xl bg-[var(--c-14100a)] p-1">
               {COLS.map((c) => (
                 <button
                   key={c}
                   role="radio"
                   aria-checked={opts.cols === c}
                   onClick={() => setOpts({ ...opts, cols: c })}
-                  className={`${CHIP} ${opts.cols === c ? 'bg-gradient-to-br from-[#f6d98a] to-[#c8922e] text-[#241a08]' : 'text-[#c9b892] hover:text-[#f2c14e]'}`}
+                  className={`${CHIP} ${opts.cols === c ? 'bg-gradient-to-br from-[var(--c-f6d98a)] to-[var(--c-c8922e)] text-[var(--c-241a08)]' : 'text-[var(--c-c9b892)] hover:text-[var(--c-f2c14e)]'}`}
                 >
                   {c}
                 </button>
@@ -211,24 +211,24 @@ export default function PrintChart({ onClose, lang, t, nameOf, instrument }: Pro
             </div>
           </div>
 
-          <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-[#a08c64]">{s.preview}</p>
+          <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-[var(--c-a08c64)]">{s.preview}</p>
           {/* превью: те же классы, что и у листа, только уже — видно и сетку, и цвета печати */}
-          <div className="mt-1 max-h-72 overflow-hidden rounded-lg border border-[#4a3b22]" aria-hidden="true">
+          <div className="mt-1 max-h-72 overflow-hidden rounded-lg border border-[var(--c-4a3b22)]" aria-hidden="true">
             <div className="ps-paper p-2" style={{ zoom: 0.55 }}>
               {head}
               {grid(notes.slice(0, PREVIEW_N))}
             </div>
           </div>
 
-          <p className="mt-3 text-sm text-[#c9b892]">
+          <p className="mt-3 text-sm text-[var(--c-c9b892)]">
             {notes.length ? `${s.count} ${notes.length}` : s.empty}
           </p>
-          <p className="mt-1 text-xs text-[#7a6845]">{s.pdfHint}</p>
+          <p className="mt-1 text-xs text-[var(--c-7a6845)]">{s.pdfHint}</p>
 
           <button
             onClick={doPrint}
             disabled={!notes.length || busy}
-            className="mt-4 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-[#f6d98a] to-[#c8922e] font-bold text-[#241a08] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[#f2c14e]"
+            className="mt-4 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-[var(--c-f6d98a)] to-[var(--c-c8922e)] font-bold text-[var(--c-241a08)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[var(--c-f2c14e)]"
           >
             <Printer size={18} />
             {busy ? s.preparing : s.print}
