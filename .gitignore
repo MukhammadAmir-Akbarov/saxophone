@@ -26,3 +26,6 @@ dist-ssr
 # сборки Android
 Saxophone-*.apk
 Saxophone-*.aab
+
+# исходный APK 2.1 и старый Android-проект, с которых всё начиналось
+original/
